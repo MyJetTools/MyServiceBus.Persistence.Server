@@ -1,0 +1,14 @@
+[
+  {
+    "outputFileName": "wwwroot/js/sb.min.js",
+    "inputFiles": [
+      "wwwroot/js/html.js",
+      "wwwroot/js/main.js"
+    ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  }
+]

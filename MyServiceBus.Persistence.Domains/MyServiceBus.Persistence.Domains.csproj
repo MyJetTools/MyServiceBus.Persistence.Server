@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MyDependencies" Version="1.0.1" />
+      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.1" />
+      <PackageReference Include="protobuf-net" Version="3.0.73" />
+      <PackageReference Include="SharpCompress" Version="0.28.0" />
+    </ItemGroup>
+
+</Project>

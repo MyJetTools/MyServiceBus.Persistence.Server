@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Version>1.0.0-rc3</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MyServiceBus.Persistence.AzureStorage\MyServiceBus.Persistence.AzureStorage.csproj" />
+      <ProjectReference Include="..\MyServiceBus.Persistence.Domains\MyServiceBus.Persistence.Domains.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DotNetCoreDecorators" Version="1.0.20" />
+      <PackageReference Include="MySettingsReader" Version="1.1.0" />
+      <PackageReference Include="protobuf-net.Grpc" Version="1.0.147" />
+      <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.147" />
+      <PackageReference Include="Grpc.Net.Client" Version="2.35.0" />
+      <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.16.0" />
+      <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.1" />
+      <PackageReference Include="NSwag.AspNetCore" Version="13.10.2" />
+      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.1" />     
+      <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />   
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <TypeScriptCompile Include="TypeScript\contracts.d.ts" />
+      <TypeScriptCompile Include="TypeScript\html.ts" />
+      <TypeScriptCompile Include="TypeScript\main.ts" />
+    </ItemGroup>
+
+</Project>

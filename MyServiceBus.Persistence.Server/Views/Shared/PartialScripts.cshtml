@@ -1,0 +1,18 @@
+@{
+    Layout = null;
+}
+
+
+<environment include="Development">
+    <link href="/css/bootstrap.css" type="text/css" rel="stylesheet"/>
+    <script src="/lib/jquery.js"></script>
+    <script src="/js/html.js" asp-append-version="true"></script>
+    <script src="/js/main.js" asp-append-version="true"></script>
+</environment>
+
+
+<environment include="Production">
+    <link href="/css/bootstrap.css" type="text/css" rel="stylesheet"/>
+    <script src="/lib/jquery.js"></script>
+    <script src="/js/sb.min.js" asp-append-version="true"></script>
+</environment>
