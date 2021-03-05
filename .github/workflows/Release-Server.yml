@@ -29,7 +29,7 @@ jobs:
       run: ls ./publish-api
       
     - name: Publish Server to Registry
-      uses: swisschain/Publish-Docker-Github-Action@master
+      uses: myjettools/Publish-Docker-Github-Action@master
       with:
         name: myjettools/my-service-bus-persistence
         username: ${{ secrets.DOCKER_USERNAME }}
