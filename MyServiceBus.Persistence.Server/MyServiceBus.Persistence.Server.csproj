@@ -12,14 +12,15 @@
 
     <ItemGroup>
       <PackageReference Include="DotNetCoreDecorators" Version="1.0.20" />
-      <PackageReference Include="MySettingsReader" Version="1.1.0" />
+      <PackageReference Include="MySettingsReader" Version="1.1.1" />
+      <PackageReference Include="NSwag.Core" Version="13.10.7" />
       <PackageReference Include="protobuf-net.Grpc" Version="1.0.147" />
       <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.147" />
       <PackageReference Include="Grpc.Net.Client" Version="2.35.0" />
-      <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.16.0" />
+      <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.17.0" />
       <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.1" />
-      <PackageReference Include="NSwag.AspNetCore" Version="13.10.2" />
-      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.1" />     
+      <PackageReference Include="NSwag.AspNetCore" Version="13.10.7" />
+      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.5" />     
       <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />   
     </ItemGroup>
 

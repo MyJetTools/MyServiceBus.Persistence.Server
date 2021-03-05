@@ -1,4 +1,4 @@
-using MyYamlSettingsParser;
+using MyYamlParser;
 
 namespace MyServiceBus.Persistence.Server
 {
@@ -12,7 +12,6 @@ namespace MyServiceBus.Persistence.Server
         
         [YamlProperty]
         public int LoadBlobPagesSize { get; set; }
-        
         
         [YamlProperty]
         public string FlushQueuesSnapshotFreq { get; set; }

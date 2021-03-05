@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
+        <TargetFramework>net5.0</TargetFramework>
+        <LangVersion>9</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -9,7 +10,7 @@
       <PackageReference Include="MyAzurePageBlobs.DataBuilder" Version="1.0.22" />
       <PackageReference Include="MyDependencies" Version="1.0.1" />
       <PackageReference Include="protobuf-net" Version="3.0.73" />
-      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.1" />
+      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.5" />
     </ItemGroup>
 
     <ItemGroup>
