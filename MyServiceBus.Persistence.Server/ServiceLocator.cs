@@ -9,6 +9,7 @@ using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 using MyServiceBus.Persistence.Domains.TopicsAndQueues;
+using MyServiceBus.Persistence.Server.Services;
 
 namespace MyServiceBus.Persistence.Server
 {
@@ -109,6 +110,11 @@ namespace MyServiceBus.Persistence.Server
             _taskTimerSyncQueues.Register("IndexByMinuteWriter", IndexByMinuteWriter.SaveMessagesToStorage);
             _taskTimerSyncQueues.Register("PagesToCompressDetector", PagesToCompressDetector.TimerAsync);
             _taskTimerSyncQueues.Register("FlushLastCompressedPagesState", LastCompressedPageStorage.FlushAsync);
+            _taskTimerSyncQueues.Register("Update prometheus", () =>
+            {
+                MetricsCollector.UpdatePrometheus();
+                return new ValueTask();
+            });
 
             _taskTimerSyncMessages.Register("PersistentOperationsScheduler", PersistentOperationsScheduler.ExecuteOperationAsync);
         }

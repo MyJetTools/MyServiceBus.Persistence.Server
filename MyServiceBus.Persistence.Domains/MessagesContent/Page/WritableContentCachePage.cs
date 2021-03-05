@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 using MyServiceBus.Persistence.Grpc;
@@ -11,10 +10,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
     {
         private readonly ReaderWriterLockSlim _readerWriterLockSlim;
 
-        private readonly SortedDictionary<long, MessageContentGrpcModel> _messages 
-            = new SortedDictionary<long, MessageContentGrpcModel>();
-        
-        private IReadOnlyList<MessageContentGrpcModel> _messagesAsList;
+
+        private readonly MessagesContentDictionary _messages = new ();
+
 
         private CompressedPage _compressedSnapshot;
 
@@ -24,6 +22,12 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             PageId = pageId;
             LastAccessTime = DateTime.UtcNow;
         }
+        
+        public WritableContentCachePage(ReaderWriterLockSlim readerWriterLockSlim, MessagePageId pageId, IReadOnlyList<MessageContentGrpcModel> initMessages):
+            this(readerWriterLockSlim, pageId)
+        {
+            _messages.Init(initMessages);
+        }
 
         public void Add(IEnumerable<MessageContentGrpcModel> messagesToAdd)
         {
@@ -32,13 +36,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             {
                 foreach (var grpcModel in messagesToAdd)
                 {
-                    if (_messages.ContainsKey(grpcModel.MessageId))
-                        _messages[grpcModel.MessageId] = grpcModel;
-                    else
-                        _messages.Add(grpcModel.MessageId, grpcModel);
+                    _messages.AddOrUpdate(grpcModel);
                 }
 
-                _messagesAsList = null;
                 _compressedSnapshot.EmptyIt();
             }
             finally
@@ -74,6 +74,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         public DateTime LastAccessTime { get; private set; }
         public int Count { get; private set; }
+        public long TotalContentSize => _messages.TotalContentSize;
+
         public IReadOnlyList<MessageContentGrpcModel> GetMessages()
         {
             return GetMessagesAsList();
@@ -81,7 +83,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         private IReadOnlyList<MessageContentGrpcModel> GetMessagesAsList()
         {
-            return _messagesAsList ??= _messages.Values.ToList();
+            return _messages.GetMessagesAsList();
         }
 
         public MessagePageId PageId { get; }
@@ -91,7 +93,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             _readerWriterLockSlim.EnterReadLock();
             try
             {
-                return _messages.TryGetValue(messageId, out var result) ? result : null;
+                return _messages.TryGetOrNull(messageId);
             }
             finally
             {
@@ -102,21 +104,13 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         public static WritableContentCachePage Create(ReaderWriterLockSlim readerWriterLockSlim, IMessageContentPage messageContent)
         {
+            
+            var messages = messageContent.GetCompressedPage().UnCompress();
 
-            var result = new WritableContentCachePage(readerWriterLockSlim, messageContent.PageId)
+            return new WritableContentCachePage(readerWriterLockSlim, messageContent.PageId, messages)
             {
                 _compressedSnapshot = messageContent.GetCompressedPage(),
-                _messagesAsList = messageContent.GetCompressedPage().UnCompress()
             };
-
-            foreach (var message in result._messagesAsList)
-            {
-                if (!result._messages.ContainsKey(message.MessageId))
-                    result._messages.Add(message.MessageId, message);
-            }
-
-            return result;
-
         }
 
     }

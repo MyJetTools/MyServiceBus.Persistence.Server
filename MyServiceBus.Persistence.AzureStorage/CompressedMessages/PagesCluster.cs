@@ -117,12 +117,11 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
 
                 return (position, length);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Console.WriteLine("TocIndex: "+tocIndex);
-                throw ex;
+                throw;
             }
- 
         }
 
 
@@ -208,6 +207,7 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
             catch (Exception e)
             {
                 Console.WriteLine("Can not get TocIndex for page: "+pageId.Value+"; TopicId:"+TopicId);
+                Console.WriteLine(e);
                 throw;
             }
             

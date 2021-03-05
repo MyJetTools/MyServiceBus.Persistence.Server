@@ -15,6 +15,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         DateTime LastAccessTime { get;}
         
         int Count { get; }
+        
+        long TotalContentSize { get; }
 
         IReadOnlyList<MessageContentGrpcModel> GetMessages();
 

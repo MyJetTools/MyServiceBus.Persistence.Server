@@ -96,6 +96,17 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             }
         }
 
+        public Dictionary<string, (int loadedPages, long contentSize)> GetMetrics()
+        {
+            var result = new Dictionary<string, (int loadedPages, long contentSize)>();
+            lock (_cache)
+            {
+                foreach (var group in _cache.Values)
+                    result.Add(group.TopicId, (group.Dictionary.Count, group.Dictionary.Values.Sum(itm => itm.TotalContentSize)));
+            }
+            return result;
+        }
+
 
         public Dictionary<string, IReadOnlyList<long>> GetLoadedPages()
         {

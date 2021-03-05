@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 using MyServiceBus.Persistence.Grpc;
 
@@ -9,12 +8,14 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
     public class ReadOnlyContentPage : IMessageContentPage
     {
 
-        private SortedDictionary<long, MessageContentGrpcModel> _messages;
+        private MessagesContentDictionary _messages = new ();
 
         private CompressedPage _compressedPage;
 
         public DateTime LastAccessTime { get; private set; }
-        public int Count { get; private set; }
+        public int Count => _messages.Count;
+        public long TotalContentSize => _messages.TotalContentSize;
+
         public IReadOnlyList<MessageContentGrpcModel> GetMessages()
         {
             return _compressedPage.UnCompress();
@@ -41,18 +42,19 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             if (_messages == null)
                 return;
 
-            var result = new SortedDictionary<long, MessageContentGrpcModel>();
+            var result = new MessagesContentDictionary();
 
-            foreach (var message in _messages)
+            foreach (var message in _messages.GetMessages())
             {
-                if (MessagesContentPagesUtils.GetPageId(message.Key).Value == PageId.Value)
-                    result.Add(message.Key, message.Value);
+                if (MessagesContentPagesUtils.GetPageId(message.MessageId).Value == PageId.Value)
+                {
+                    result.AddOrUpdate(message);
+                }
             }
 
 
-            _compressedPage = new CompressedPage(result.Values.ToList()); 
+            _compressedPage = new CompressedPage(result.GetMessagesAsList()); 
             _messages = result;
-            Count = result.Count;
         }
         
         public void InitMessages()
@@ -60,25 +62,19 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             if (_messages != null)
                 return;
             
-            var result = new SortedDictionary<long, MessageContentGrpcModel>();
+            var messages = new MessagesContentDictionary();
+
             try
             {
-                foreach (var grpcModel in _compressedPage.UnCompress())
-                {
-                    if (!result.ContainsKey(grpcModel.MessageId))
-                        result.Add(grpcModel.MessageId, grpcModel);
-                }
-                
-                Count = result.Count;
+                messages.Init(_compressedPage.UnCompress());
             }
             catch (Exception)
             {
-                _compressedPage = new CompressedPage(result.Values.ToList());
+                _compressedPage = new CompressedPage(messages.GetMessagesAsList());
                 Console.WriteLine("Can not Unzip Archive for the page: "+PageId);
             }
             
-            _messages = result;
-
+            _messages = messages;
         }
 
 
@@ -91,17 +87,15 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             if (_messages == null)
                 InitMessages();
 
-            var messages = new SortedDictionary<long, MessageContentGrpcModel>(_messages);
+            var result = _messages.Clone();
 
             foreach (var grpcModel in messageContentPage.GetMessages())
             {
-                if (!messages.ContainsKey(grpcModel.MessageId))
-                    messages.Add(grpcModel.MessageId, grpcModel);
+                result.AddOrUpdate(grpcModel);
             }
 
-            _messages = messages;
-            Count = messages.Count;
-
+            _compressedPage = new CompressedPage(result.GetMessagesAsList()); 
+            _messages = result;
         }
 
 
@@ -111,7 +105,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             if (_messages == null)
                 InitMessages();
 
-            return _messages.ContainsKey(messageId) ? _messages[messageId] : null;
+            return _messages.TryGetOrNull(messageId);
         }
 
         public CompressedPage GetCompressedPage()
@@ -122,10 +116,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
     }
 
-
     public static class ReadOnlyContentPageExtensions
     {
-        
         public static ReadOnlyContentPage ToReadOnlyContentPage(this IMessageContentPage messageContentPage)
         {
 

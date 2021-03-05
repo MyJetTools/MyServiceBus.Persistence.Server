@@ -38,14 +38,14 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
 
         public static CompressedPage CreateEmpty()
         {
-            return new CompressedPage();
+            return new ();
         }
 
         public ReadOnlyContentPage ToContentPage(MessagePageId pageId)
         {
-            if (Content.IsEmpty)
-                return null;
-            return new ReadOnlyContentPage(pageId, this);
+            return Content.IsEmpty 
+                ? null 
+                : new ReadOnlyContentPage(pageId, this);
         }
         
     }

@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +7,7 @@ using MyDependencies;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Server.Grpc;
 using MyServiceBus.Persistence.Server.Middlewares;
+using Prometheus;
 using ProtoBuf.Grpc.Server;
 
 namespace MyServiceBus.Persistence.Server
@@ -63,14 +63,13 @@ namespace MyServiceBus.Persistence.Server
 
             app.UseRouting();
 
-
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
                 endpoints.MapGrpcService<MyServiceBusMessagesPersistenceGrpcService>();
                 endpoints.MapGrpcService<MyServiceBusQueuePersistenceGrpcService>();
                 endpoints.MapGrpcService<MyServiceBusHistoryReaderGrpcService>();
+                endpoints.MapMetrics();
             });
 
             ServiceLocator.Start();
