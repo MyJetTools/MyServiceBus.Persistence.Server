@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using DotNetCoreDecorators;
-using MyDependencies;
+using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
 using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
@@ -32,7 +32,7 @@ namespace MyServiceBus.Persistence.Server
         private static QueueSnapshotWriter _queueSnapshotWriter;
 
 
-        private static IServiceResolver _serviceResolver;
+        private static IServiceProvider _serviceProvider;
 
         public static IAppLogger AppLogger { get; private set; }
 
@@ -54,13 +54,13 @@ namespace MyServiceBus.Persistence.Server
         public static ILastCompressedPageStorage LastCompressedPageStorage { get; private set; }
         
 
-        private static async Task InitTopicsAsync(IServiceResolver sr)
+        private static async Task InitTopicsAsync(IServiceProvider sp)
         {
-            await sr.GetService<TopicAndQueueInitializer>().InitAsync();
+            await sp.GetRequiredService<TopicAndQueueInitializer>().InitAsync();
 
         }
 
-        public static void Init(IServiceResolver sr, SettingsModel settingsModel)
+        public static void Init(IServiceProvider sp, SettingsModel settingsModel)
         {
 
             var queuesTimeSpan = TimeSpan.Parse(settingsModel.FlushQueuesSnapshotFreq);
@@ -70,40 +70,38 @@ namespace MyServiceBus.Persistence.Server
             _taskTimerSyncMessages = new TaskTimer(messagesTimeSpan);  
 
             
-            AppGlobalFlags = sr.GetService<AppGlobalFlags>();
+            AppGlobalFlags = sp.GetRequiredService<AppGlobalFlags>();
             AppGlobalFlags.LoadBlobPagesSize = settingsModel.LoadBlobPagesSize;
 
-            _serviceResolver = sr;
-            QueueSnapshotCache = sr.GetService<QueueSnapshotCache>();
-            MessagesContentCache = sr.GetService<MessagesContentCache>();
-            MessagesContentReader = sr.GetService<MessagesContentReader>();
+            _serviceProvider = sp;
+            QueueSnapshotCache = sp.GetRequiredService<QueueSnapshotCache>();
+            MessagesContentCache = sp.GetRequiredService<MessagesContentCache>();
+            MessagesContentReader = sp.GetRequiredService<MessagesContentReader>();
 
-            _activePagesWarmerAndGc = sr.GetService<ActivePagesWarmerAndGc>();
+            _activePagesWarmerAndGc = sp.GetRequiredService<ActivePagesWarmerAndGc>();
 
-            PersistentOperationsScheduler = sr.GetService<PersistentOperationsScheduler>();
-            PersistentOperationsScheduler.RegisterServiceResolver(_serviceResolver);
+            PersistentOperationsScheduler = sp.GetRequiredService<PersistentOperationsScheduler>();
+            PersistentOperationsScheduler.RegisterServiceResolver(sp);
 
-            _queueSnapshotWriter = sr.GetService<QueueSnapshotWriter>();
+            _queueSnapshotWriter = sp.GetRequiredService<QueueSnapshotWriter>();
 
-            CompressedMessagesStorage = sr.GetService<ICompressedMessagesStorage>(); 
+            CompressedMessagesStorage = sp.GetRequiredService<ICompressedMessagesStorage>(); 
 
-            CompressedMessagesUtils = sr.GetService<CompressedMessagesUtils>();
+            CompressedMessagesUtils = sp.GetRequiredService<CompressedMessagesUtils>();
 
-            LegacyCompressedMessagesStorage = sr.GetService<ILegacyCompressedMessagesStorage>();
+            LegacyCompressedMessagesStorage = sp.GetRequiredService<ILegacyCompressedMessagesStorage>();
 
-            MessagesContentPersistentStorage = sr.GetService<IMessagesContentPersistentStorage>();
+            MessagesContentPersistentStorage = sp.GetRequiredService<IMessagesContentPersistentStorage>();
 
-            PagesToCompressDetector = sr.GetService<PagesToCompressDetector>();
+            PagesToCompressDetector = sp.GetRequiredService<PagesToCompressDetector>();
 
-            LastCompressedPageStorage = sr.GetService<ILastCompressedPageStorage>();
-            
-            
+            LastCompressedPageStorage = sp.GetRequiredService<ILastCompressedPageStorage>();
 
-            IndexByMinuteWriter = sr.GetService<IndexByMinuteWriter>();
+            IndexByMinuteWriter = sp.GetRequiredService<IndexByMinuteWriter>();
 
-            AppLogger = sr.GetService<IAppLogger>();
+            AppLogger = sp.GetRequiredService<IAppLogger>();
 
-            Task.Run(() => InitTopicsAsync(sr));
+            Task.Run(() => InitTopicsAsync(sp));
 
             _taskTimerSyncQueues.Register("SyncQueuesSnapshotToStorage", _queueSnapshotWriter.ExecuteAsync);
             _taskTimerSyncQueues.Register("ActiveMessagesWarmerAndGc", _activePagesWarmerAndGc.CheckAndWarmItUpAsync);
@@ -131,7 +129,7 @@ namespace MyServiceBus.Persistence.Server
             AppLogger.AddLog("SYSTEM", "Start shutting down application");
             AppGlobalFlags.IsShuttingDown = true;
 
-            await _serviceResolver.GetService<ServicesDisposer>().Shutdown();
+            await _serviceProvider.GetRequiredService<ServicesDisposer>().Shutdown();
 
             AppLogger.AddLog("SYSTEM", "Everything stopped properly");
 

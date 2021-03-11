@@ -14,7 +14,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
     public class PageWriter : IPageWriter
     {
 
-        private static readonly Dictionary<string, long> WritePosition = new Dictionary<string, long>();
+        private static readonly Dictionary<string, long> WritePosition = new ();
 
         public static long GetWritePosition(string topicId)
         {
@@ -77,7 +77,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
         private readonly TaskCompletionSource<WritableContentCachePage> _taskCompletionSource =
-            new TaskCompletionSource<WritableContentCachePage>();
+            new ();
 
         public Task WaitUntilInitializedAsync()
         {

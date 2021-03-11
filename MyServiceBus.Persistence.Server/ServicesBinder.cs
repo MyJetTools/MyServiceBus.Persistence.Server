@@ -1,5 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.WindowsAzure.Storage;
-using MyDependencies;
 using MyServiceBus.Persistence.AzureStorage;
 
 namespace MyServiceBus.Persistence.Server
@@ -7,13 +7,13 @@ namespace MyServiceBus.Persistence.Server
     public static class ServicesBinder
     {
 
-        public static void BindAzureServices(this IServiceRegistrator sr, SettingsModel settingsModel)
+        public static void BindAzureServices(this IServiceCollection sc, SettingsModel settingsModel)
         {
             var cloudStorageAccount = CloudStorageAccount.Parse(settingsModel.QueuesConnectionString);
-            sr.BindTopicsPersistentStorage(cloudStorageAccount);
+            sc.BindTopicsPersistentStorage(cloudStorageAccount);
             
             cloudStorageAccount = CloudStorageAccount.Parse(settingsModel.MessagesConnectionString);
-            sr.BindMessagesPersistentStorage(cloudStorageAccount);
+            sc.BindMessagesPersistentStorage(cloudStorageAccount);
         }
         
     }

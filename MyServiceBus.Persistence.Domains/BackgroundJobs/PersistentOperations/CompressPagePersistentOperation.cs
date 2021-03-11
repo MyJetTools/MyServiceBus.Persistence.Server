@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using MyDependencies;
+using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
@@ -58,11 +58,11 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             return _contentPage;
         }
 
-        public override void Inject(IServiceResolver serviceResolver)
+        public override void Inject(IServiceProvider serviceProvider)
         {
-            _persistentStorage = serviceResolver.GetService<IMessagesContentPersistentStorage>();
-            _appLogger = serviceResolver.GetService<IAppLogger>();
-            _compressedMessagesStorage = serviceResolver.GetService<ICompressedMessagesStorage>();
+            _persistentStorage = serviceProvider.GetRequiredService<IMessagesContentPersistentStorage>();
+            _appLogger = serviceProvider.GetRequiredService<IAppLogger>();
+            _compressedMessagesStorage = serviceProvider.GetRequiredService<ICompressedMessagesStorage>();
         }
         
         public override string OperationFriendlyName => "Compressing Page";

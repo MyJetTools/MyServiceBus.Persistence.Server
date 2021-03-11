@@ -8,13 +8,18 @@
     <ItemGroup>
       <PackageReference Include="MyAzurePageBlobs" Version="1.0.16" />
       <PackageReference Include="MyAzurePageBlobs.DataBuilder" Version="1.0.22" />
-      <PackageReference Include="MyDependencies" Version="1.0.1" />
       <PackageReference Include="protobuf-net" Version="3.0.73" />
-      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.5" />
+      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.6" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\MyServiceBus.Persistence.Domains\MyServiceBus.Persistence.Domains.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=5.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60">
+        <HintPath>..\..\..\..\..\..\..\usr\local\share\dotnet\packs\Microsoft.AspNetCore.App.Ref\5.0.0\ref\net5.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>

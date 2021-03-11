@@ -1,4 +1,4 @@
-using MyDependencies;
+using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
 using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
@@ -10,27 +10,27 @@ namespace MyServiceBus.Persistence.Domains
 {
     public static class MyServiceBusServicesBinder
     {
-        public static void BindMyServiceBusPersistenceServices(this IServiceRegistrator sr)
+        public static void BindMyServiceBusPersistenceServices(this IServiceCollection sr)
         {
-            sr.Register<QueueSnapshotCache>();
-            sr.Register<QueueSnapshotWriter>();
-            sr.Register<MessagesContentCache>();
-            sr.Register<MessagesContentReader>();
-            sr.Register<TopicAndQueueInitializer>();
-            sr.Register<PersistentOperationsScheduler>();
-            sr.Register<ActivePagesWarmerAndGc>();
+            sr.AddSingleton<QueueSnapshotCache>();
+            sr.AddSingleton<QueueSnapshotWriter>();
+            sr.AddSingleton<MessagesContentCache>();
+            sr.AddSingleton<MessagesContentReader>();
+            sr.AddSingleton<TopicAndQueueInitializer>();
+            sr.AddSingleton<PersistentOperationsScheduler>();
+            sr.AddSingleton<ActivePagesWarmerAndGc>();
             
-            sr.Register<AppGlobalFlags>();
+            sr.AddSingleton<AppGlobalFlags>();
             
-            sr.Register<IAppLogger>(new AppLogger());
+            sr.AddSingleton<IAppLogger>(new AppLogger());
             
-            sr.Register<CompressedMessagesUtils>();
+            sr.AddSingleton<CompressedMessagesUtils>();
             
-            sr.Register<ServicesDisposer>();
+            sr.AddSingleton<ServicesDisposer>();
             
-            sr.Register<IndexByMinuteWriter>();
+            sr.AddSingleton<IndexByMinuteWriter>();
             
-            sr.Register<PagesToCompressDetector>();
+            sr.AddSingleton<PagesToCompressDetector>();
         }
         
     }

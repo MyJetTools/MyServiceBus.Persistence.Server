@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MyDependencies;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 using MyServiceBus.Persistence.Grpc;
@@ -20,15 +19,15 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
         }
 
 
-        private readonly object _lockObject = new object();
+        private readonly object _lockObject = new ();
 
-        private readonly List<PersistentOperationBase> _queue = new List<PersistentOperationBase>();
+        private readonly List<PersistentOperationBase> _queue = new ();
 
-        private readonly ActiveOperations _activeOperations = new ActiveOperations();
+        private readonly ActiveOperations _activeOperations = new ();
 
-        private IServiceResolver _serviceResolver;
+        private IServiceProvider _serviceResolver;
 
-        public void RegisterServiceResolver(IServiceResolver sr)
+        public void RegisterServiceResolver(IServiceProvider sr)
         {
             _serviceResolver = sr;
         }
@@ -93,9 +92,6 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
                 return null;
             }
         }
-
-
-
 
         private async Task ExecuteOperationAsync(PersistentOperationBase operation)
         {

@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using MyDependencies;
+using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
@@ -9,17 +9,18 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 {
     public class RestorePagePersistentOperation : PersistentOperationBase
     {
-        public RestorePagePersistentOperation(string topicId, MessagePageId pageId, string reason) : base(topicId, pageId, reason)
+        public RestorePagePersistentOperation(string topicId, MessagePageId pageId, string reason) 
+            : base(topicId, pageId, reason)
         {
         }
 
-        public override void Inject(IServiceResolver serviceResolver)
+        public override void Inject(IServiceProvider serviceProvider)
         {
-            _messagesContentPersistentStorage = serviceResolver.GetService<IMessagesContentPersistentStorage>();
-            _messagesContentCache = serviceResolver.GetService<MessagesContentCache>();
-            _appLogger = serviceResolver.GetService<IAppLogger>();
-            _globalFlags = serviceResolver.GetService<AppGlobalFlags>();
-            _compressedMessagesStorage = serviceResolver.GetService<ICompressedMessagesStorage>();
+            _messagesContentPersistentStorage = serviceProvider.GetRequiredService<IMessagesContentPersistentStorage>();
+            _messagesContentCache = serviceProvider.GetRequiredService<MessagesContentCache>();
+            _appLogger = serviceProvider.GetRequiredService<IAppLogger>();
+            _globalFlags = serviceProvider.GetRequiredService<AppGlobalFlags>();
+            _compressedMessagesStorage = serviceProvider.GetRequiredService<ICompressedMessagesStorage>();
         }
 
         private IMessagesContentPersistentStorage _messagesContentPersistentStorage;

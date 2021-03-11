@@ -1,6 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.WindowsAzure.Storage;
 using MyAzurePageBlobs;
-using MyDependencies;
 using MyServiceBus.Persistence.AzureStorage.CompressedMessages;
 using MyServiceBus.Persistence.AzureStorage.IndexByMinute;
 using MyServiceBus.Persistence.AzureStorage.QueueSnapshot;
@@ -15,41 +15,41 @@ namespace MyServiceBus.Persistence.AzureStorage
     public static class AzureServicesBinder
     {
 
-        public static void BindTopicsPersistentStorage(this IServiceRegistrator sr, CloudStorageAccount cloudStorageAccount)
+        public static void BindTopicsPersistentStorage(this IServiceCollection sc, CloudStorageAccount cloudStorageAccount)
         {
-            sr.Register<ITopicsAndQueuesSnapshotStorage>(new TopicsAndQueuesSnapshotStorage(
+            sc.AddSingleton<ITopicsAndQueuesSnapshotStorage>(new TopicsAndQueuesSnapshotStorage(
                 new MyAzurePageBlob(cloudStorageAccount, "topics", "topicsdata")));
         }
         
         private const string FileMask = "0000000000000000000";
 
-        public static void BindMessagesPersistentStorage(this IServiceRegistrator sr, CloudStorageAccount cloudStorageAccount)
+        public static void BindMessagesPersistentStorage(this IServiceCollection sc, CloudStorageAccount cloudStorageAccount)
         {
-            sr.Register<IMessagesContentPersistentStorage>(new MessagesPersistentStorage(parameters =>
+            sc.AddSingleton<IMessagesContentPersistentStorage>(new MessagesPersistentStorage(parameters =>
             {
                 var fileName = parameters.pageId.Value.ToString(FileMask);
                 return new MyAzurePageBlob(cloudStorageAccount, parameters.topicId, fileName);
             }));
             
-            sr.Register<ICompressedMessagesStorage>(new CompressedMessagesStorage(parameters =>
+            sc.AddSingleton<ICompressedMessagesStorage>(new CompressedMessagesStorage(parameters =>
             {
                 var fileName = "cluster-"+parameters.pageCluserId.Value.ToString(FileMask)+".zip";
                 return new MyAzurePageBlob(cloudStorageAccount, parameters.topicId, fileName);
             }));
             
-            sr.Register<ILegacyCompressedMessagesStorage>(new LegacyCompressedMessagesStorage(parameters =>
+            sc.AddSingleton<ILegacyCompressedMessagesStorage>(new LegacyCompressedMessagesStorage(parameters =>
             {
                 var fileName = parameters.pageId.Value.ToString(FileMask)+".zip";
                 return new MyAzurePageBlob(cloudStorageAccount, parameters.topicId, fileName);
             }));
             
-            sr.Register<IIndexByMinuteStorage>(new IndexByMinuteStorage(parameters =>
+            sc.AddSingleton<IIndexByMinuteStorage>(new IndexByMinuteStorage(parameters =>
             {
                 var fileName = "index-" + parameters.year;
                 return new MyAzurePageBlob(cloudStorageAccount, parameters.topicId, fileName);
             }));
             
-            sr.Register<ILastCompressedPageStorage>(new LastCompressedPageStorage(new MyAzurePageBlob(cloudStorageAccount, "system", "last-compressed")));
+            sc.AddSingleton<ILastCompressedPageStorage>(new LastCompressedPageStorage(new MyAzurePageBlob(cloudStorageAccount, "system", "last-compressed")));
         }
         
     }

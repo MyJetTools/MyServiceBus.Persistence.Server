@@ -27,28 +27,26 @@ namespace MyServiceBus.Persistence.Server.Controllers
             var resultObject = new
             {
                 
-                activeOperations = ServiceLocator.PersistentOperationsScheduler.GetActiveOperations().Select(itm =>
+                activeOperations = ServiceLocator.PersistentOperationsScheduler
+                    .GetActiveOperations()
+                    .Select(itm => new
                 {
-                    return new
-                    {
-                        id = itm.Id,
-                        name = itm.OperationFriendlyName,
-                        pageId = itm.PageId.Value,
-                        topicId = itm.TopicId,
-                        reason = itm.Reason
-                    };
+                    id = itm.Id,
+                    name = itm.OperationFriendlyName,
+                    pageId = itm.PageId.Value,
+                    topicId = itm.TopicId,
+                    reason = itm.Reason
                 }),
                 
-                awaitingOperations = ServiceLocator.PersistentOperationsScheduler.GetAwaiting().Select(itm =>
+                awaitingOperations = ServiceLocator.PersistentOperationsScheduler
+                    .GetAwaiting()
+                    .Select(itm => new
                 {
-                    return new
-                    {
-                        id = itm.Id,
-                        name = itm.OperationFriendlyName,
-                        pageId = itm.PageId.Value,
-                        topicId = itm.TopicId,
-                        reason = itm.Reason
-                    };
+                    id = itm.Id,
+                    name = itm.OperationFriendlyName,
+                    pageId = itm.PageId.Value,
+                    topicId = itm.TopicId,
+                    reason = itm.Reason
                 }),
                 
                 queuesSnapshotId = messageSnapshot.SnapshotId,
@@ -63,8 +61,10 @@ namespace MyServiceBus.Persistence.Server.Controllers
                         topicId = itm.Key,
                         writePosition = PageWriter.GetWritePosition(itm.Key),
                         messageId = snapshot?.MessageId ?? -1,
-                        pages = itm.Value,
-                        activePages = snapshot?.GetActivePages().Select(messagePageId => messagePageId.Value) ?? Array.Empty<long>(), 
+                        pages = itm.Value.OrderBy(pageId => pageId),
+                        activePages = (snapshot?.GetActivePages()
+                                .Select(messagePageId => messagePageId.Value) ?? Array.Empty<long>())
+                            .OrderBy(pageId => pageId), 
                         queues = snapshot != null ? snapshot.QueueSnapshots : Array.Empty<QueueSnapshotGrpcModel>()
                     };
                 })

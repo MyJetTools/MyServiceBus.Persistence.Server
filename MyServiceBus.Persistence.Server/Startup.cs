@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MyDependencies;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Server.Grpc;
 using MyServiceBus.Persistence.Server.Middlewares;
@@ -14,15 +13,14 @@ namespace MyServiceBus.Persistence.Server
 {
     public class Startup
     {
-
         public static SettingsModel Settings { get; private set; }
 
-        public static MyIoc MyIoc = new MyIoc();
+        private static IServiceCollection _services;
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-
+            _services = services;
             Settings = MySettingsReader.SettingsReader.GetSettings<SettingsModel>(".myservicebus-persistence");
 
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -31,12 +29,10 @@ namespace MyServiceBus.Persistence.Server
 
             services.AddMvc(o => { o.EnableEndpointRouting = false; });
 
-            MyIoc.BindAzureServices(Settings);
-            MyIoc.BindMyServiceBusPersistenceServices();
+            _services.BindAzureServices(Settings);
+            _services.BindMyServiceBusPersistenceServices();
 
             services.AddSwaggerDocument(o => o.Title = "MyServiceBus-Persistence");
-
-            ServiceLocator.Init(MyIoc, Settings);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -72,6 +68,8 @@ namespace MyServiceBus.Persistence.Server
                 endpoints.MapMetrics();
             });
 
+            var sp = _services.BuildServiceProvider();
+            ServiceLocator.Init(sp, Settings);
             ServiceLocator.Start();
         }
     }

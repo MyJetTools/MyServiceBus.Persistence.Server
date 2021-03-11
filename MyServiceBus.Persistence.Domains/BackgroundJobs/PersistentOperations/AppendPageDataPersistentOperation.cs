@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MyDependencies;
+using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 using MyServiceBus.Persistence.Grpc;
@@ -12,7 +13,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
     {
 
         private readonly SortedDictionary<long, MessageContentGrpcModel> _messagesToPersist
-            = new SortedDictionary<long, MessageContentGrpcModel>();
+            = new ();
 
 
         private readonly long _min;
@@ -33,11 +34,11 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
                 _messagesToPersist.TryAdd(message.MessageId, message);
         }
 
-        public override void Inject(IServiceResolver serviceResolver)
+        public override void Inject(IServiceProvider serviceProvider)
         {
-            _messagesContentPersistentStorage = serviceResolver.GetService<IMessagesContentPersistentStorage>();
-            _messagesContentCache = serviceResolver.GetService<MessagesContentCache>();
-            _globalFlags = serviceResolver.GetService<AppGlobalFlags>();
+            _messagesContentPersistentStorage = serviceProvider.GetRequiredService<IMessagesContentPersistentStorage>();
+            _messagesContentCache = serviceProvider.GetRequiredService<MessagesContentCache>();
+            _globalFlags = serviceProvider.GetRequiredService<AppGlobalFlags>();
         }
 
 

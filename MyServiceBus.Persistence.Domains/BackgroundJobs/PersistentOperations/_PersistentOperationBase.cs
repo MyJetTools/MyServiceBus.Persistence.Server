@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using MyDependencies;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 
@@ -43,10 +42,10 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             }
         }
 
-        private readonly TaskCompletionSource<IMessageContentPage> _completionSource = new TaskCompletionSource<IMessageContentPage>();
+        private readonly TaskCompletionSource<IMessageContentPage> _completionSource = new ();
 
 
-        public abstract void Inject(IServiceResolver serviceResolver);
+        public abstract void Inject(IServiceProvider serviceProvider);
         
         public Task<IMessageContentPage> GetCurrentTask()
         {
