@@ -44,7 +44,8 @@ namespace MyServiceBus.Persistence.Server.Grpc
             }
             ServiceLocator.IndexByMinuteWriter.NewMessages(contract.TopicId, contract.Messages);
             
-            var groups = contract.Messages.GroupBy(itm => MessagesContentPagesUtils.GetPageId(itm.MessageId).Value);
+            var groups = contract.Messages
+                .GroupBy(itm => MessagesContentPagesUtils.GetPageId(itm.MessageId).Value);
             
             foreach (var group in groups)
             {

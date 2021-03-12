@@ -20,14 +20,6 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
             if (nextPageId <= maxPageId.Value)
                 if (pages.All(itm => itm.Value != nextPageId))
                     pages.Add(new MessagePageId(nextPageId));
-            
-            var prevPageId = pageId.Value - 1;
-            if (prevPageId<0)
-                return;
-            
-            if (prevPageId <= maxPageId.Value)
-                if (pages.All(itm => itm.Value != prevPageId))
-                    pages.Add(new MessagePageId(prevPageId));
         }
 
 
