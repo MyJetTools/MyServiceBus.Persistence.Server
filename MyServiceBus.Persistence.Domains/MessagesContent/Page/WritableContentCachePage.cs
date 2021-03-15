@@ -8,7 +8,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 {
     public class WritableContentCachePage : IMessageContentPage
     {
-        private readonly ReaderWriterLockSlim _readerWriterLockSlim;
+        private readonly ReaderWriterLockSlim _readerWriterLockSlim = new ();
 
 
         private readonly MessagesContentDictionary _messages = new ();
@@ -16,15 +16,13 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         private CompressedPage _compressedSnapshot;
 
-        public WritableContentCachePage(ReaderWriterLockSlim readerWriterLockSlim, MessagePageId pageId)
+        public WritableContentCachePage(MessagePageId pageId)
         {
-            _readerWriterLockSlim = readerWriterLockSlim;
             PageId = pageId;
             LastAccessTime = DateTime.UtcNow;
         }
         
-        public WritableContentCachePage(ReaderWriterLockSlim readerWriterLockSlim, MessagePageId pageId, IReadOnlyList<MessageContentGrpcModel> initMessages):
-            this(readerWriterLockSlim, pageId)
+        public WritableContentCachePage(MessagePageId pageId, IReadOnlyList<MessageContentGrpcModel> initMessages):this(pageId)
         {
             _messages.Init(initMessages);
         }
@@ -86,6 +84,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             return _messages.GetMessagesAsList();
         }
 
+        public bool IsCompressed => false;
         public MessagePageId PageId { get; }
 
         public MessageContentGrpcModel TryGet(long messageId)
@@ -102,12 +101,12 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             } 
         }
 
-        public static WritableContentCachePage Create(ReaderWriterLockSlim readerWriterLockSlim, IMessageContentPage messageContent)
+        public static WritableContentCachePage Create(IMessageContentPage messageContent)
         {
             
             var messages = messageContent.GetCompressedPage().UnCompress();
 
-            return new WritableContentCachePage(readerWriterLockSlim, messageContent.PageId, messages)
+            return new WritableContentCachePage(messageContent.PageId, messages)
             {
                 _compressedSnapshot = messageContent.GetCompressedPage(),
             };

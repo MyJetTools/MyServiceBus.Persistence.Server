@@ -9,6 +9,9 @@ using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 {
+    
+    //ToDo - DeleteMe
+    /*
     public class AppendPageDataPersistentOperation : PersistentOperationBase
     {
 
@@ -74,4 +77,5 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 
         public override string OperationFriendlyName => "Appending Page Data: "+_min+"...";
     }
+    */
 }

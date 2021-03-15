@@ -91,4 +91,25 @@ class HtmlRenderer
         
     }
     
+    
+    public static renderTopics(topics:ITopicSignalRContract[]){
+        let result = '<table class="table table-striped">' +
+            '<tr><th>Topic</th><th>Write pos</th><th>MessageId</th><th>Write queue size</th><th>Queues</th><th>Execution queue</th></tr>';
+        
+        
+        for (let topic of topics){
+            result += '<tr>' +
+                '<td>'+topic.id+'</td>' +
+                '<td id="'+topic.id+'-write-pos"></td>' +
+                '<td id="'+topic.id+'-msg-id"></td>' +
+                '<td id="'+topic.id+'-write-queue-size"></td>' +
+                '<td></td>' +
+                '<td></td>' +
+                '</tr>';
+        }
+        
+        return  result+'</table>'
+        
+    }
+    
 }

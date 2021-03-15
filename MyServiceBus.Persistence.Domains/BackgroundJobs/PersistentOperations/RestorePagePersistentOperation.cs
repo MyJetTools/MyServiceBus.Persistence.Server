@@ -7,6 +7,10 @@ using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 
 namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 {
+    
+    //ToDo - Delete Me
+    
+    /*
     public class RestorePagePersistentOperation : PersistentOperationBase
     {
         public RestorePagePersistentOperation(string topicId, MessagePageId pageId, string reason) 
@@ -103,4 +107,5 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 
         public override string OperationFriendlyName => "Restoring page";
     }
+    */
 }

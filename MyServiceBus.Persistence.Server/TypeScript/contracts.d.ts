@@ -32,3 +32,24 @@ interface IStatus{
     queuesSnapshotId:number;
     activeOperations:IPersistentOperation[];
 }
+
+interface IInitSignalRContract{
+    version:string;
+}
+
+interface ITopicSignalRContract{
+    id:string;
+}
+
+interface ITopicInfoSignalRContract{
+    writePosition:number,
+    writeQueueSize:number,
+    messageId:number
+}
+
+
+interface IDictionaryUpdate<TValue>{
+    insert : Dictionary<TValue>;
+    update : Dictionary<TValue>;
+    delete : string[];
+}

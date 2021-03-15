@@ -2,6 +2,7 @@
   {
     "outputFileName": "wwwroot/js/sb.min.js",
     "inputFiles": [
+      "wwwroot/js/Framework/dictionary.js",
       "wwwroot/js/html.js",
       "wwwroot/js/main.js"
     ],

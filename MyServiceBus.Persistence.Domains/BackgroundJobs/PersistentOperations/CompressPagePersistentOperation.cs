@@ -7,6 +7,10 @@ using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 
 namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 {
+    
+    
+    //ToDo - DeleteMe
+    /*
     public class CompressPagePersistentOperation : PersistentOperationBase
     {
         private IMessagesContentPersistentStorage _persistentStorage;
@@ -67,4 +71,5 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
         
         public override string OperationFriendlyName => "Compressing Page";
     }
+    */
 }

@@ -1,44 +1,82 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
+using MyServiceBus.Persistence.Domains.ExecutionProgress;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
+using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.MessagesContent
 {
     public class MessagesContentReader
     {
-        private readonly MessagesContentCache _messagesContentCache;
-        private readonly PersistentOperationsScheduler _persistentOperationsScheduler;
+        private readonly TopicsList _topicsList;
+        private readonly IMessagesContentPersistentStorage _messagesContentPersistentStorage;
+        private readonly ICompressedMessagesStorage _compressedMessagesStorage;
         private readonly IIndexByMinuteStorage _indexByMinuteStorage;
+        private readonly AppGlobalFlags _appGlobalFlags;
 
-        public MessagesContentReader(MessagesContentCache messagesContentCache,
-            PersistentOperationsScheduler persistentOperationsScheduler, IIndexByMinuteStorage indexByMinuteStorage)
+        public MessagesContentReader(TopicsList topicsList,
+            IMessagesContentPersistentStorage messagesContentPersistentStorage,
+            ICompressedMessagesStorage compressedMessagesStorage,
+            IIndexByMinuteStorage indexByMinuteStorage, AppGlobalFlags appGlobalFlags)
         {
-            _messagesContentCache = messagesContentCache;
-            _persistentOperationsScheduler = persistentOperationsScheduler;
+            _topicsList = topicsList;
+            _messagesContentPersistentStorage = messagesContentPersistentStorage;
+            _compressedMessagesStorage = compressedMessagesStorage;
             _indexByMinuteStorage = indexByMinuteStorage;
+            _appGlobalFlags = appGlobalFlags;
         }
-        
-        
-        
 
-        public ValueTask<IMessageContentPage> TryGetPageAsync(string topicId, MessagePageId pageId, string reason)
+        internal async Task<IMessageContentPage> RestorePageUnderLockAsync(TopicDataLocator topicDataLocator, MessagePageId pageId)
         {
-            var page = _messagesContentCache.TryGetPage(topicId, pageId);
+            var page = topicDataLocator.TryGetPage(pageId);
+            if (page != default)
+                return page;
+                
+            var pageCompressedContent = await _compressedMessagesStorage.GetCompressedPageAsync(topicDataLocator.TopicId, pageId);
+
+            if (pageCompressedContent.Content.Length > 0)
+                return pageCompressedContent.ToContentPage(pageId);
+                
+                    
+            var pageWriter = await _messagesContentPersistentStorage.TryGetPageWriterAsync(topicDataLocator.TopicId, pageId);
+
+            if (pageWriter == null)
+            {
+                var writableContentPage = new WritableContentCachePage(pageId);
+                topicDataLocator.AddPage(pageId, writableContentPage);
+                pageWriter = await _messagesContentPersistentStorage.CreatePageWriterAsync(topicDataLocator.TopicId, pageId, false, writableContentPage, _appGlobalFlags);
+            }
+                
+            return pageWriter?.GetAssignedPage();
+        }
+
+        private async Task<IMessageContentPage> RestorePageAsync(TopicDataLocator topicDataLocator, MessagePageId pageId, RequestHandler requestHandler)
+        {
+            using (await topicDataLocator.AsyncLock.LockAsync(requestHandler))
+            {
+                return await RestorePageUnderLockAsync(topicDataLocator, pageId);
+            }
+        }
+
+        public ValueTask<IMessageContentPage> TryGetPageAsync(string topicId, MessagePageId pageId, RequestHandler requestHandler)
+        {
+            var topicDataLocator = _topicsList.GetOrCreate(topicId);
+
+            var page = topicDataLocator.TryGetPage(pageId);
 
             return page != null 
                 ? new ValueTask<IMessageContentPage>(page) 
-                : new ValueTask<IMessageContentPage>(_persistentOperationsScheduler.RestorePageAsync(topicId, pageId, reason));
+                : new ValueTask<IMessageContentPage>(RestorePageAsync(topicDataLocator, pageId, requestHandler));
         }
 
-        public async Task<(MessageContentGrpcModel message, IMessageContentPage page)> TryGetMessageAsync(string topicId, long messageId, string reason)
+        public async Task<(MessageContentGrpcModel message, IMessageContentPage page)> TryGetMessageAsync(string topicId, long messageId, RequestHandler requestHandler)
         {
             var pageId = MessagesContentPagesUtils.GetPageId(messageId);
             
-            var page = await TryGetPageAsync(topicId, pageId, reason);
+            var page = await TryGetPageAsync(topicId, pageId, requestHandler);
             
             return (page?.TryGet(messageId), page);
         }
@@ -64,19 +102,19 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             return -1;
         }
 
-        public async IAsyncEnumerable<MessageContentGrpcModel> GetMessagesByDate(string topicId, DateTime fromDate, int maxMessagesAmount
-            , string reason)
+        public async IAsyncEnumerable<MessageContentGrpcModel> GetMessagesByDate(string topicId, 
+            DateTime fromDate, int maxMessagesAmount, RequestHandler requestHandler)
         {
             var messageId = await GetMessageIsByDateAsync(topicId, fromDate);
 
             if (messageId <= 0) 
                 yield break;
             
-            await foreach (var item in GetMessagesFromMessageId(topicId, messageId, maxMessagesAmount, reason))
+            await foreach (var item in GetMessagesFromMessageId(topicId, messageId, maxMessagesAmount, requestHandler))
                 yield return item;
         }
         
-        public async IAsyncEnumerable<MessageContentGrpcModel> GetMessagesByDateAsync(string topicId, DateTime fromDate, string reason)
+        public async IAsyncEnumerable<MessageContentGrpcModel> GetMessagesByDateAsync(string topicId, DateTime fromDate, RequestHandler requestHandler)
         {
             var messageId = await GetMessageIsByDateAsync(topicId, fromDate);
 
@@ -89,7 +127,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
 
             while (pageId.Value <= maxPageId)
             {
-                var page = await TryGetPageAsync(topicId, pageId, reason);
+                var page = await TryGetPageAsync(topicId, pageId, requestHandler);
 
                 foreach (var message in page.GetMessages())
                 {
@@ -104,7 +142,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
 
 
         public async IAsyncEnumerable<MessageContentGrpcModel> GetMessagesFromMessageId(string topicId, long fromMessageId,
-            int maxMessagesAmount, string reason)
+            int maxMessagesAmount, RequestHandler requestHandler)
         {
             var pageId = MessagesContentPagesUtils.GetPageId(fromMessageId);
 
@@ -115,7 +153,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
 
             while (pageId.Value < maxPageId)
             {
-                var page = await TryGetPageAsync(topicId, pageId, reason);
+                var page = await TryGetPageAsync(topicId, pageId, requestHandler);
 
                 foreach (var message in page.GetMessages())
                 {
@@ -123,8 +161,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
                     {
                         yield return message;
                         messageNo++;
-                        
-
                     }
 
                     if (messageNo>=maxMessagesAmount)
@@ -133,7 +169,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
 
                 pageId = new MessagePageId(pageId.Value + 1);
             }
-            
         }
 
     }

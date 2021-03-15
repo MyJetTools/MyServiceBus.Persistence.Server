@@ -20,7 +20,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
             var stream = new MemoryStream();
             ProtoBuf.Serializer.Serialize(stream, page);
             stream.Position = 0;
-            Content = stream.Zip();
+            Content = stream.Compress();
         }
 
         public ReadOnlyMemory<byte> Content { get; private set; }
@@ -32,7 +32,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
 
         public IReadOnlyList<MessageContentGrpcModel> UnCompress()
         {
-            var unzippedMemory = Content.Unzip();
+            var unzippedMemory = Content.DeCompress();
             return ProtoBuf.Serializer.Deserialize<List<MessageContentGrpcModel>>(unzippedMemory);
         }
 
@@ -49,17 +49,5 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
         }
         
     }
-
-
-    public static class CompressedPageUtils
-    {
-        public static async ValueTask<ReadOnlyContentPage> ToContentPageAsync(this Task<CompressedPage> contentPageTask, MessagePageId pageId)
-        {
-            var contentPage = await contentPageTask;
-            return contentPage.ToContentPage(pageId);
-        }
-    }
-    
-    
 
 }

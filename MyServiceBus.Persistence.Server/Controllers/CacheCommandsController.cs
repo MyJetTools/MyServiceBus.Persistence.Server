@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MyServiceBus.Persistence.AzureStorage.CompressedMessages;
@@ -11,45 +10,26 @@ namespace MyServiceBus.Persistence.Server.Controllers
     [ApiController]
     public class CacheCommandsController : Controller
     {
+        
         [HttpPost("[Controller]/Compress")]
         public async Task<CompressPageResult> CompressAsync([FromForm]string topicId, [FromForm]long pageId)
         {
-
-            var snapshot = ServiceLocator.QueueSnapshotCache.Get();
-
-            var topicSnapshot = snapshot.Cache.FirstOrDefault(itm => itm.TopicId == topicId);
-
-            if (topicSnapshot == null)
-                return new CompressPageResult
-                {
-                    Result = "Topic not found"
-                };
-
-
             var messagePageId = new MessagePageId(pageId);
             
-            if (!ServiceLocator.CompressedMessagesUtils.PageCanBeCompressed(topicId, messagePageId))
-            {
-                return new CompressPageResult
-                {
-                    Result = "Can not compress current page"
-                };
-            }
-
-            var page = await ServiceLocator.MessagesContentReader.TryGetPageAsync(topicId, messagePageId, "API-Request");
-
-            await ServiceLocator.PersistentOperationsScheduler.CompressPageAsync(topicId, page, "API request");
+            using var requestHandler = ServiceLocator.CurrentRequests.StartRequest(topicId, "API:"+Request.Path.ToString());
+            var result = await ServiceLocator.ContentCompressorProcessor.CompressPageAsync(topicId, messagePageId, requestHandler);
 
             return new CompressPageResult
             {
-                Result = "Page is compressed"
+                Result = "Execution result: "+result
             };
         }
         
         [HttpGet("[Controller]/Message")]
         public async Task<MessageContentModel> GetMessageAsync([FromQuery]string topicId, [FromQuery]long messageId)
         {
-            var (message, page) = await ServiceLocator.MessagesContentReader.TryGetMessageAsync(topicId, messageId, "API Request");
+            using var requestHandler = ServiceLocator.CurrentRequests.StartRequest(topicId, "API CacheCommands/Message");
+            var (message, page) = await ServiceLocator.MessagesContentReader.TryGetMessageAsync(topicId, messageId, requestHandler);
 
             if (message == null)
                 return new MessageContentModel

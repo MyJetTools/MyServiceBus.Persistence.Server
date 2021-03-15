@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
-using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
-using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
@@ -13,25 +12,24 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
         private readonly QueueSnapshotCache _queueSnapshotCache;
         private readonly ITopicsAndQueuesSnapshotStorage _storage;
         private readonly QueueSnapshotWriter _queueSnapshotWriter;
-        private readonly PersistentOperationsScheduler _persistentOperationsScheduler;
         private readonly AppGlobalFlags _appGlobalFlags;
         private readonly IAppLogger _appLogger;
+        private readonly TopicsList _topicsList;
 
         public TopicAndQueueInitializer(QueueSnapshotCache queueSnapshotCache,
             ITopicsAndQueuesSnapshotStorage storage, QueueSnapshotWriter queueSnapshotWriter, 
-            PersistentOperationsScheduler persistentOperationsScheduler, AppGlobalFlags appGlobalFlags, IAppLogger appLogger)
+            AppGlobalFlags appGlobalFlags, IAppLogger appLogger, TopicsList topicsList)
         {
             _queueSnapshotCache = queueSnapshotCache;
             _storage = storage;
             _queueSnapshotWriter = queueSnapshotWriter;
-            _persistentOperationsScheduler = persistentOperationsScheduler;
             _appGlobalFlags = appGlobalFlags;
             _appLogger = appLogger;
+            _topicsList = topicsList;
         }
 
         private async Task<IReadOnlyList<TopicAndQueuesSnapshotGrpcModel>> InitQueueSnapshot()
         {
-
             try
             {
                 return await _storage.GetAsync();
@@ -39,11 +37,8 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                Console.WriteLine("Making Empty Snapshot");
-                await _storage.SaveAsync(Array.Empty<TopicAndQueuesSnapshotGrpcModel>());
-                return Array.Empty<TopicAndQueuesSnapshotGrpcModel>();
+                throw ;
             }
-            
         }
 
 
@@ -53,24 +48,15 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
             const int snapshotId = 0;
             
             var fullSnapshot = await InitQueueSnapshot();
+            _appLogger.AddLog("SYSTEM", "Queues snapshot initialized ok");
             
             _queueSnapshotCache.Init(fullSnapshot, snapshotId);
             _queueSnapshotWriter.Init(snapshotId);
 
-            var tasks = new List<Task>();
-            foreach (var topicAndQueuesSnapshot in fullSnapshot)
-            {
-                var pageId = MessagesContentPagesUtils.GetPageId(topicAndQueuesSnapshot.MessageId);
-                
-                var task =  _persistentOperationsScheduler.RestorePageAsync(topicAndQueuesSnapshot.TopicId, pageId, "Init");
-                tasks.Add(task);
-            }
+            _topicsList.Init(fullSnapshot.Select(itm => itm.TopicId));
 
-            await Task.WhenAll(tasks);
             _appGlobalFlags.Initialized = true;
-            
             _appLogger.AddLog("SYSTEM", "Application Initialized");
-            
         }
   
     }

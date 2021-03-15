@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using MyServiceBus.Persistence.Domains.MessagesContent.Page;
-
+//ToDo - delete me
 namespace MyServiceBus.Persistence.Domains.MessagesContent
 {
 
+    /*
     
     public class MessagesContentCache
     {
@@ -144,4 +140,5 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             }
         }
     }
+    */
 }

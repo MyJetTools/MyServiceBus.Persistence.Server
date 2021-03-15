@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
-using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
+using MyServiceBus.Persistence.Domains.ExecutionProgress;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
@@ -14,23 +14,24 @@ namespace MyServiceBus.Persistence.Domains
         {
             sr.AddSingleton<QueueSnapshotCache>();
             sr.AddSingleton<QueueSnapshotWriter>();
-            sr.AddSingleton<MessagesContentCache>();
+
             sr.AddSingleton<MessagesContentReader>();
             sr.AddSingleton<TopicAndQueueInitializer>();
-            sr.AddSingleton<PersistentOperationsScheduler>();
-            sr.AddSingleton<ActivePagesWarmerAndGc>();
+            sr.AddSingleton<LoadedPagesGcBackgroundProcessor>();
             
             sr.AddSingleton<AppGlobalFlags>();
             
             sr.AddSingleton<IAppLogger>(new AppLogger());
             
-            sr.AddSingleton<CompressedMessagesUtils>();
+            sr.AddSingleton<ContentCompressorProcessor>();
             
             sr.AddSingleton<ServicesDisposer>();
             
             sr.AddSingleton<IndexByMinuteWriter>();
             
-            sr.AddSingleton<PagesToCompressDetector>();
+            sr.AddSingleton<TopicsList>();
+
+            sr.AddSingleton<CurrentRequests>();
         }
         
     }

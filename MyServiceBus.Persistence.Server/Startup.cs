@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Server.Grpc;
+using MyServiceBus.Persistence.Server.Hubs;
 using MyServiceBus.Persistence.Server.Middlewares;
 using Prometheus;
 using ProtoBuf.Grpc.Server;
@@ -25,6 +26,7 @@ namespace MyServiceBus.Persistence.Server
 
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             services.AddCodeFirstGrpc();
+            services.AddSignalR();
             services.AddApplicationInsightsTelemetry();
 
             services.AddMvc(o => { o.EnableEndpointRouting = false; });
@@ -66,6 +68,7 @@ namespace MyServiceBus.Persistence.Server
                 endpoints.MapGrpcService<MyServiceBusQueuePersistenceGrpcService>();
                 endpoints.MapGrpcService<MyServiceBusHistoryReaderGrpcService>();
                 endpoints.MapMetrics();
+                endpoints.MapHub<MonitoringHub>("/monitoringhub");
             });
 
             var sp = _services.BuildServiceProvider();

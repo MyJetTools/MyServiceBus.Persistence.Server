@@ -23,6 +23,12 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
         }
 
 
+        public static MessagePageId GetActivePageId(this TopicAndQueuesSnapshotGrpcModel snapshot)
+        {
+            return new MessagePageId(snapshot.MessageId);
+        }
+
+
 
         public static IReadOnlyList<MessagePageId> GetActivePages(this TopicAndQueuesSnapshotGrpcModel snapshot)
         {

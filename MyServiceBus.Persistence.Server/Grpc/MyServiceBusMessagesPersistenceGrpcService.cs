@@ -9,14 +9,18 @@ namespace MyServiceBus.Persistence.Server.Grpc
 {
     public class MyServiceBusMessagesPersistenceGrpcService : IMyServiceBusMessagesPersistenceGrpcService
     {
-
         public async IAsyncEnumerable<byte[]> GetPageCompressedAsync(GetMessagesPageGrpcRequest request)
         {
             if (!ServiceLocator.AppGlobalFlags.Initialized)
                 throw new Exception("App is not initialized yet");
 
+            using var requestHandler = ServiceLocator.CurrentRequests.StartRequest(request.TopicId,
+                "GRPC GetPageCompressed");
+            
+            var messagePageId = new MessagePageId(request.PageNo);
+
             var page = await ServiceLocator.MessagesContentReader.TryGetPageAsync(request.TopicId,
-                new MessagePageId(request.PageNo), "GRPC Request");
+                messagePageId, requestHandler);
 
             if (page != null)
             {
@@ -43,6 +47,8 @@ namespace MyServiceBus.Persistence.Server.Grpc
                 return;
             }
             ServiceLocator.IndexByMinuteWriter.NewMessages(contract.TopicId, contract.Messages);
+
+            var topicDataLocator = ServiceLocator.TopicsList.GetOrCreate(contract.TopicId);
             
             var groups = contract.Messages
                 .GroupBy(itm => MessagesContentPagesUtils.GetPageId(itm.MessageId).Value);
@@ -50,9 +56,11 @@ namespace MyServiceBus.Persistence.Server.Grpc
             foreach (var group in groups)
             {
                 var messagePageId = new MessagePageId(group.Key);
-                ServiceLocator.PersistentOperationsScheduler.WriteMessagesAsync(contract.TopicId, "GRPC Request", messagePageId, group);
-                var page = ServiceLocator.MessagesContentCache.GetOrCreateWritablePage(contract.TopicId, messagePageId);
-                page.Add(group);
+                
+                var writablePage = topicDataLocator.GetOrCreateWritablePage(messagePageId);
+                writablePage.Add(group);
+                
+                topicDataLocator.MessagesToPersist.Append(messagePageId, group);
             }
 
         }
@@ -63,8 +71,10 @@ namespace MyServiceBus.Persistence.Server.Grpc
             if (!ServiceLocator.AppGlobalFlags.Initialized)
                 throw new Exception("App is not initialized yet");
 
-            var (result, _) = await ServiceLocator.MessagesContentReader.TryGetMessageAsync(request.TopicId, request.MessageId,
-                "GRPC Request");
+            using var requestHandler = ServiceLocator.CurrentRequests.StartRequest(request.TopicId, "GRPC GetMessage");
+            
+            var (result, _) 
+                = await ServiceLocator.MessagesContentReader.TryGetMessageAsync(request.TopicId, request.MessageId, requestHandler);
 
             return result;
         }

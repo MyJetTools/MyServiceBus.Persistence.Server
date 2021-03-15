@@ -9,6 +9,8 @@ using MyServiceBus.Persistence.Grpc;
 namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 {
 
+    //ToDo - DeleteMe
+    /*
     public class PersistentOperationsScheduler
     {
 
@@ -61,6 +63,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
         }
 
 
+        
         public void WriteMessagesAsync(string topicId, string reason, MessagePageId pageId,
             IEnumerable<MessageContentGrpcModel> messages)
         {
@@ -154,4 +157,5 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
         }
         
     }
+    */
 }

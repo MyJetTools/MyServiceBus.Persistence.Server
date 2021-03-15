@@ -7,8 +7,10 @@ namespace MyServiceBus.Persistence.Server.Grpc
     {
         public async IAsyncEnumerable<MessageContentGrpcModel> GetByDateAsync(GetHistoryByDateGrpcRequest request)
         {
-            await foreach (var message in  ServiceLocator.MessagesContentReader.GetMessagesByDateAsync(request.TopicId, 
-                request.FromDateTime, "GRPC History Request"))
+            using var requestHandler = ServiceLocator.CurrentRequests.StartRequest(request.TopicId, "GRPC History Request");
+            
+            await foreach (var message in ServiceLocator.MessagesContentReader.GetMessagesByDateAsync(
+                request.TopicId, request.FromDateTime, requestHandler))
             {
                 yield return message;
             }

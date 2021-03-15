@@ -1,3 +1,4 @@
+using System.Linq;
 using Prometheus;
 
 namespace MyServiceBus.Persistence.Server.Services
@@ -19,13 +20,15 @@ namespace MyServiceBus.Persistence.Server.Services
 
         private static void UpdateLoadedPages()
         {
-            foreach (var (topicId, metrics) in ServiceLocator.MessagesContentCache.GetMetrics())
+
+            foreach (var topicDataLocator in ServiceLocator.TopicsList.AllDataLocators)
             {
-                LoadedPagesAmount.WithLabels(topicId).Set(metrics.loadedPages);
-                LoadedPagesContentSize.WithLabels(topicId).Set(metrics.contentSize);
+                var loadedPages = topicDataLocator.GetLoadedPages();
+                LoadedPagesAmount.WithLabels(topicDataLocator.TopicId).Set(loadedPages.Count);
+                LoadedPagesContentSize.WithLabels(topicDataLocator.TopicId)
+                    .Set(loadedPages.Sum(itm => itm.TotalContentSize));
             }
         }
-
 
         public static void UpdatePrometheus()
         {

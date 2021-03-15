@@ -8,6 +8,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
     public interface IMessageContentPage
     {
         
+        bool IsCompressed { get; }
+        
         MessagePageId PageId { get; }
         MessageContentGrpcModel TryGet(long messageId);
         CompressedPage GetCompressedPage();

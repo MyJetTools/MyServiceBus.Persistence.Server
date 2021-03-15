@@ -1,27 +1,22 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using MyServiceBus.Persistence.Domains.MessagesContent;
 using SharpCompress.Common;
-using SharpCompress.Common.Zip;
 using SharpCompress.Readers;
 using SharpCompress.Readers.Zip;
 using SharpCompress.Writers;
 
 namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
 {
-    public static class MessagesCompressor
+    public static class ZipArchiver
     {
-
-        public static ReadOnlyMemory<byte> ToReadOnlyMemory(this MemoryStream stream)
+        private static ReadOnlyMemory<byte> ToReadOnlyMemory(this MemoryStream stream)
         {
-            return new ReadOnlyMemory<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+            return new (stream.GetBuffer(), 0, (int)stream.Length);
         }
 
         private const string ZipEntryName = "d";
 
-        public static ReadOnlyMemory<byte> Zip(this MemoryStream sourceStream)
+        public static ReadOnlyMemory<byte> Compress(this MemoryStream sourceStream)
         {
             var zipResultStream = new MemoryStream();
 
@@ -32,7 +27,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
             return zipResultStream.ToArray();
         }
 
-        public static ReadOnlyMemory<byte> Unzip(this ReadOnlyMemory<byte> src)
+        public static ReadOnlyMemory<byte> DeCompress(this ReadOnlyMemory<byte> src)
         {
             
             var srcStream = new MemoryStream(src.Length);

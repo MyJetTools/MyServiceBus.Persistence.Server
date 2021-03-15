@@ -10,7 +10,7 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
     {
         private IReadOnlyList<TopicAndQueuesSnapshotGrpcModel> _cache = new List<TopicAndQueuesSnapshotGrpcModel>();
         
-        private readonly ReaderWriterLockSlim _readerWriterLockSlim = new ReaderWriterLockSlim();
+        private readonly ReaderWriterLockSlim _readerWriterLockSlim = new ();
 
         private long _snapshotId;
 

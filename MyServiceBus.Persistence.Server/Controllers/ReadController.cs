@@ -15,7 +15,8 @@ namespace MyServiceBus.Persistence.Server.Controllers
         [HttpGet("read/byId")]
         public async ValueTask<ApiResultContract<MessageRestApiModel>> ByIdAsync([FromQuery]string topicId, [FromQuery]long messageId)
         {
-            var (message, _) = await ServiceLocator.MessagesContentReader.TryGetMessageAsync(topicId, messageId, "API");
+            using var requestHandler = ServiceLocator.CurrentRequests.StartRequest(topicId, "API: read/byId");
+            var (message, _) = await ServiceLocator.MessagesContentReader.TryGetMessageAsync(topicId, messageId, requestHandler);
             
             if (message == null)
                 return ApiResultContract<MessageRestApiModel>.CreateFail(ApiResult.RecordNotFound);
@@ -32,9 +33,11 @@ namespace MyServiceBus.Persistence.Server.Controllers
             if (maxAmount > Startup.Settings.MaxResponseRecordsAmount)
                 return StatusCode(403, "Maximum amount of records can be less then " +
                                        Startup.Settings.MaxResponseRecordsAmount);
+            
+            using var requestHandler = ServiceLocator.CurrentRequests.StartRequest(topicId, "API: read/listFromDate");
 
             var messages = await ServiceLocator.MessagesContentReader
-                .GetMessagesByDate(topicId, fromDate, maxAmount, "API Request").ToListAsync();
+                .GetMessagesByDate(topicId, fromDate, maxAmount, requestHandler).ToListAsync();
             
             return Json(
                 ApiResultContract<IEnumerable<MessageRestApiModel>>.CreateOk(
@@ -51,7 +54,9 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 return StatusCode(403, "Maximum amount of records can be less then " +
                                   Startup.Settings.MaxResponseRecordsAmount);
             
-            var messages = await ServiceLocator.MessagesContentReader.GetMessagesFromMessageId(topicId, messageId, maxAmount, "API Request").ToListAsync();
+            using var requestHandler = ServiceLocator.CurrentRequests.StartRequest(topicId, "API: read/listFromMessageId");
+            
+            var messages = await ServiceLocator.MessagesContentReader.GetMessagesFromMessageId(topicId, messageId, maxAmount, requestHandler).ToListAsync();
             return Json(ApiResultContract<IEnumerable<MessageRestApiModel>>.CreateOk(messages.Select(MessageRestApiModel.Create)));
         }
         

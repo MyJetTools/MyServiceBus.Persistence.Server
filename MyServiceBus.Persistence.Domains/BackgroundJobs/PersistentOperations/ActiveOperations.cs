@@ -3,6 +3,8 @@ using System.Linq;
 
 namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 {
+    //ToDo - DeleteMe
+    /*
     public class ActiveOperations
     {
         
@@ -49,4 +51,5 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
         }
         
     }
+    */
 }

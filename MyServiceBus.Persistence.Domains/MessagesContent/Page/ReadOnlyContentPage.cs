@@ -5,6 +5,7 @@ using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 {
+    //ToDo - Оптимизировать как мы читаем с Compressed страницы
     public class ReadOnlyContentPage : IMessageContentPage
     {
 
@@ -20,6 +21,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         {
             return _compressedPage.UnCompress();
         }
+
+        public bool IsCompressed => true;
         
         public MessagePageId PageId { get; }
 

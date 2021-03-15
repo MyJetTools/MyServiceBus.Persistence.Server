@@ -5,6 +5,8 @@ using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 
 namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 {
+    
+    /*
     public abstract class PersistentOperationBase
     {
 
@@ -52,5 +54,6 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             return _completionSource.Task;
         }
     }
+    */
     
 }

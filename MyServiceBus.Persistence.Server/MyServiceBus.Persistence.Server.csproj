@@ -31,8 +31,10 @@
 
     <ItemGroup>
       <TypeScriptCompile Include="TypeScript\contracts.d.ts" />
+      <TypeScriptCompile Include="TypeScript\Framework\dictionary.ts" />
       <TypeScriptCompile Include="TypeScript\html.ts" />
       <TypeScriptCompile Include="TypeScript\main.ts" />
+      <TypeScriptCompile Include="TypeScript\typings\signalr.d.ts" />
     </ItemGroup>
 
     <ItemGroup>

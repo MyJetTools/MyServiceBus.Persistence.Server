@@ -60,6 +60,22 @@ var HtmlRenderer = /** @class */ (function () {
             this.renderAdditionalFields(r);
         return this.splitPage(leftPart, rightPart);
     };
+    HtmlRenderer.renderTopics = function (topics) {
+        var result = '<table class="table table-striped">' +
+            '<tr><th>Topic</th><th>Write pos</th><th>MessageId</th><th>Write queue size</th><th>Queues</th><th>Execution queue</th></tr>';
+        for (var _i = 0, topics_1 = topics; _i < topics_1.length; _i++) {
+            var topic = topics_1[_i];
+            result += '<tr>' +
+                '<td>' + topic.id + '</td>' +
+                '<td id="' + topic.id + '-write-pos"></td>' +
+                '<td id="' + topic.id + '-msg-id"></td>' +
+                '<td id="' + topic.id + '-write-queue-size"></td>' +
+                '<td></td>' +
+                '<td></td>' +
+                '</tr>';
+        }
+        return result + '</table>';
+    };
     return HtmlRenderer;
 }());
 //# sourceMappingURL=html.js.map
