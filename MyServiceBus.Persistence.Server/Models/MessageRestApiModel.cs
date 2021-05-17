@@ -7,7 +7,6 @@ namespace MyServiceBus.Persistence.Server.Models
     {
         public long Id { get; set; }
         public DateTime Created { get; set; }
-        
         public string Content { get; set; }
 
         public static MessageRestApiModel Create(MessageContentGrpcModel model)

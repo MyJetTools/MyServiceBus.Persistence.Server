@@ -9,8 +9,8 @@ namespace MyServiceBus.Persistence.Server.Grpc
         {
             using var requestHandler = ServiceLocator.CurrentRequests.StartRequest(request.TopicId, "GRPC History Request");
             
-            await foreach (var message in ServiceLocator.MessagesContentReader.GetMessagesByDateAsync(
-                request.TopicId, request.FromDateTime, requestHandler))
+            await foreach (var message in 
+                ServiceLocator.MessagesContentReader.GetMessagesByDateAsync(request.TopicId, request.FromDateTime, requestHandler))
             {
                 yield return message;
             }

@@ -22,22 +22,20 @@ namespace MyServiceBus.Persistence.Server.Grpc
             var page = await ServiceLocator.MessagesContentReader.TryGetPageAsync(request.TopicId,
                 messagePageId, requestHandler);
 
-            if (page != null)
-            {
-                foreach (var batch in page.GetCompressedPage().Content.BatchIt(1024*1024*3))
-                    yield return batch.ToArray();
-            }
+            if (page == null) 
+                yield break;
+            
+            foreach (var batch in page.GetCompressedPage().Content.BatchIt(1024*1024*3))
+                yield return batch.ToArray();
         }
 
         public async ValueTask SaveMessagesAsync(IAsyncEnumerable<byte[]> request)
         {
-            
             if (!ServiceLocator.AppGlobalFlags.Initialized)
                 throw new Exception("App is not initialized yet");
 
             if (ServiceLocator.AppGlobalFlags.IsShuttingDown)
                 throw new Exception("App is stopping");
-
 
             var contract = await request.DecompressAndMerge<SaveMessagesGrpcContract>();
 
@@ -46,6 +44,7 @@ namespace MyServiceBus.Persistence.Server.Grpc
                 Console.WriteLine(contract.TopicId+": Request to Save messages with empty content");
                 return;
             }
+            
             ServiceLocator.IndexByMinuteWriter.NewMessages(contract.TopicId, contract.Messages);
 
             var topicDataLocator = ServiceLocator.TopicsList.GetOrCreate(contract.TopicId);
@@ -62,9 +61,7 @@ namespace MyServiceBus.Persistence.Server.Grpc
                 
                 topicDataLocator.MessagesToPersist.Append(messagePageId, group);
             }
-
         }
-
 
         public async ValueTask<MessageContentGrpcModel> GetMessageAsync(GetMessageGrpcRequest request)
         {
@@ -78,7 +75,6 @@ namespace MyServiceBus.Persistence.Server.Grpc
 
             return result;
         }
-
 
     }
 }

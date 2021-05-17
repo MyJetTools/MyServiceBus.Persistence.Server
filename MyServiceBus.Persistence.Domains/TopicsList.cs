@@ -9,7 +9,7 @@ namespace MyServiceBus.Persistence.Domains
     {
         private readonly object _lockObject = new();
 
-        private IDictionary<string, TopicDataLocator> _dataLocators = new Dictionary<string, TopicDataLocator>();
+        private readonly Dictionary<string, TopicDataLocator> _dataLocators = new ();
 
         private void UpdateList()
         {
@@ -18,20 +18,15 @@ namespace MyServiceBus.Persistence.Domains
         }
         public TopicDataLocator GetOrCreate(string topicId)
         {
-            var result = _dataLocators.TryGetValueOrDefault(topicId);
-
-            if (result != default)
-                return result;
-
-
             lock (_lockObject)
             {
-                result = _dataLocators.TryGetValueOrDefault(topicId);
+                var result = _dataLocators.TryGetValueOrDefault(topicId);
+
                 if (result != default)
                     return result;
 
                 var newLocator = new TopicDataLocator(topicId);
-                _dataLocators = _dataLocators.AddByCreatingNewDictionary(topicId, ()=>newLocator);
+                _dataLocators.Add(topicId, newLocator);
                 UpdateList();
                 return newLocator;
             }
@@ -39,9 +34,11 @@ namespace MyServiceBus.Persistence.Domains
 
         public TopicDataLocator TryGet(string topicId)
         {
-            return _dataLocators.TryGetValueOrDefault(topicId);
+            lock (_lockObject)
+            {
+                return _dataLocators.TryGetValueOrDefault(topicId);  
+            }
         }
-
 
         public IReadOnlyList<TopicDataLocator> AllDataLocators { get; private set; } = Array.Empty<TopicDataLocator>();
         public long SnapshotId { get; private set; }
@@ -59,11 +56,8 @@ namespace MyServiceBus.Persistence.Domains
         {
             lock (_lockObject)
             {
-                var result = topics
-                    .ToDictionary(topic => topic, 
-                    topic => new TopicDataLocator(topic));
-
-                _dataLocators = result;
+                foreach (var topicId in topics)
+                    _dataLocators.Add(topicId, new TopicDataLocator(topicId));
                 UpdateList();
             }
         }

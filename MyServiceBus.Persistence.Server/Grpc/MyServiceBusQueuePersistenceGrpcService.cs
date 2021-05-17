@@ -9,7 +9,6 @@ namespace MyServiceBus.Persistence.Server.Grpc
     {
         public ValueTask SaveSnapshotAsync(SaveQueueSnapshotGrpcRequest request)
         {
-
             if (ServiceLocator.AppGlobalFlags.IsShuttingDown)
                 throw new Exception("App is stopping");
 
@@ -19,6 +18,7 @@ namespace MyServiceBus.Persistence.Server.Grpc
                 queueSnapshot.QueueSnapshots ??= Array.Empty<QueueSnapshotGrpcModel>();
 
             ServiceLocator.QueueSnapshotCache.Save(request.QueueSnapshot);
+            
             return new ValueTask();
         }
 
