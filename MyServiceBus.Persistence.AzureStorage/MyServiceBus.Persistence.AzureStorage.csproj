@@ -8,8 +8,8 @@
     <ItemGroup>
       <PackageReference Include="MyAzurePageBlobs" Version="1.0.16" />
       <PackageReference Include="MyAzurePageBlobs.DataBuilder" Version="1.0.22" />
-      <PackageReference Include="protobuf-net" Version="3.0.73" />
-      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.6" />
+      <PackageReference Include="protobuf-net" Version="3.0.101" />
+      <PackageReference Include="MyServiceBus.Persistence.Grpc" Version="1.0.8" />
     </ItemGroup>
 
     <ItemGroup>
