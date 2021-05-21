@@ -8,6 +8,7 @@ using MyAzurePageBlobs.DataBuilder.BinaryPackagesSequence;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
+using MyServiceBus.Persistence.Domains.Metrics;
 using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
@@ -56,16 +57,19 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         
         private readonly IAzurePageBlob _azurePageBlob;
         private readonly int _pagesReadingAmount;
+        private readonly MaxPersistedMessageIdByTopic _maxPersistedMessageIdByTopic;
         private BinaryPackagesSequenceBuilder _binaryPackagesSequenceBuilder;
 
         public string TopicId { get; }
         
         public MessagePageId PageId { get; }
 
-        public PageWriter(string topicId, MessagePageId pageId, IAzurePageBlob azurePageBlob, int pagesReadingAmount)
+        public PageWriter(string topicId, MessagePageId pageId, IAzurePageBlob azurePageBlob, int pagesReadingAmount, 
+            MaxPersistedMessageIdByTopic maxPersistedMessageIdByTopic)
         {
             _azurePageBlob = azurePageBlob;
             _pagesReadingAmount = pagesReadingAmount;
+            _maxPersistedMessageIdByTopic = maxPersistedMessageIdByTopic;
             TopicId = topicId;
             PageId = pageId;
         }
@@ -80,14 +84,21 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             var result = new List<ReadOnlyMemory<byte>>();
 
             var size = 0;
+
+            var newMessages = _assignedPage.GetMessagesGreaterThen(MaxMessageIdInBlob);
             
-            foreach (var messageContent in _assignedPage.GetMessagesGreaterThen(MaxMessageIdInBlob))
+            foreach (var messageContent in newMessages)
             {
+                
                 
                 var memoryStream = new MemoryStream();
                 ProtoBuf.Serializer.Serialize(memoryStream, messageContent);
                 var memory = memoryStream.GetBuffer();
                 result.Add(new ReadOnlyMemory<byte>(memory, 0, (int)memoryStream.Position));
+                
+                if (MaxMessageIdInBlob < messageContent.MessageId)
+                    MaxMessageIdInBlob = messageContent.MessageId;
+                
                 size += messageContent.Data.Length;
 
                 if (size > 1024 * 1024 * 3)
@@ -101,6 +112,8 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
             if (result.Count > 0)
                 await _binaryPackagesSequenceBuilder.AppendAsync(result);
+            
+            _maxPersistedMessageIdByTopic.Update(TopicId, newMessages);
             
             LastAccessTime = DateTime.UtcNow;
 
@@ -123,10 +136,10 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         public long MaxMessageIdInBlob { get; private set; }
 
 
-        public async ValueTask CreateAndAssignAsync(WritableContentCachePage page)
+        public async ValueTask CreateAndAssignAsync(WritableContentCachePage page, AppGlobalFlags appGlobalFlags)
         {
-            _assignedPage = page;
             await _azurePageBlob.CreateIfNotExists();
+            await AssignPageAndInitialize(page, appGlobalFlags);
         }
         
         public async Task AssignPageAndInitialize(WritableContentCachePage page, AppGlobalFlags appGlobalFlags)
