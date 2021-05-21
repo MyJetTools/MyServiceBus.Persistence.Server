@@ -61,7 +61,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
         {
             var logs = ServiceLocator.AppLogger.Get(logProcess);
 
-            var content = CompileLogs(logs, $"Logs type: {LogProcess.All}");
+            var content = CompileLogs(logs, $"Logs type: {logProcess}");
 
             return Content(content);
         }
