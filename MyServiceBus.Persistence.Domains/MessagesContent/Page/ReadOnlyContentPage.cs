@@ -21,7 +21,12 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         {
             return _compressedPage.Messages;
         }
-        
+
+        public  (IReadOnlyList<long> holes, int count)  TestIfThereAreHoles(long pageId)
+        {
+            throw new Exception("Not supported for Read only page");
+        }
+
         public MessagePageId PageId { get; }
 
 

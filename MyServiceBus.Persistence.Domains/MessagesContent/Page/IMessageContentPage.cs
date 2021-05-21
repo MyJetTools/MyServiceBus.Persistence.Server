@@ -19,6 +19,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         IReadOnlyList<MessageContentGrpcModel> GetMessages();
 
+        (IReadOnlyList<long> holes, int count) TestIfThereAreHoles(long pageId);
+
     }
 
 

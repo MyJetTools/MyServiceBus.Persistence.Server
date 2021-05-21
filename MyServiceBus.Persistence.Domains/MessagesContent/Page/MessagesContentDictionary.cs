@@ -6,7 +6,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 {
     public class MessagesContentDictionary
     {
-        private SortedDictionary<long, MessageContentGrpcModel> _messages 
+        private readonly SortedDictionary<long, MessageContentGrpcModel> _messages 
             = new ();
         
         private IReadOnlyList<MessageContentGrpcModel> _messagesAsList;
@@ -59,6 +59,26 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                 AddOrUpdate(grpcModel);
         }
 
+
+
+        public  (IReadOnlyList<long> holes, int count)  TestIfThereAreHoles(long pageId)
+        {
+            List<long> result = null;
+            var minPage = pageId * MessagesContentPagesUtils.MessagesPerPage;
+
+            var maxPage = minPage + _messages.Count;
+
+            for (var i = minPage; i < maxPage; i++)
+            {
+                if (!_messages.ContainsKey(i))
+                {
+                    result ??= new List<long>();
+                    result.Add(i);
+                }
+            }
+
+            return (result, _messages.Count);
+        }
 
     }
 }

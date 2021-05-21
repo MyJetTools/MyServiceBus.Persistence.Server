@@ -75,12 +75,28 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             } 
         }
 
+
+        public  (IReadOnlyList<long> holes, int count)  TestIfThereAreHoles(long pageId)
+        {
+            _readerWriterLockSlim.EnterReadLock();
+            try
+            {
+                return _messages.TestIfThereAreHoles(pageId);
+            }
+            finally
+            {
+                LastAccessTime = DateTime.UtcNow;
+                _readerWriterLockSlim.ExitReadLock();
+            } 
+        }
+
         public static WritableContentCachePage Create(ReaderWriterLockSlim readerWriterLockSlim, IMessageContentPage messageContent)
         {
             var result =  new WritableContentCachePage(readerWriterLockSlim, messageContent.PageId);
             result._messages.Init(messageContent.GetMessages());
             return result;
         }
+        
 
     }
 }
