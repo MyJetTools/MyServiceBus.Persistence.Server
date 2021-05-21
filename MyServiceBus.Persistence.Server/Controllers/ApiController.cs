@@ -23,31 +23,28 @@ namespace MyServiceBus.Persistence.Server.Controllers
         {
 
             var messageSnapshot = ServiceLocator.QueueSnapshotCache.Get();
-            
+
+            var tasks = ServiceLocator.TaskSchedulerByTopic.GetTasks();
+
+            var now = DateTime.UtcNow;
             var resultObject = new
             {
                 
-                activeOperations = ServiceLocator.PersistentOperationsScheduler
-                    .GetActiveOperations()
+                activeOperations = tasks.Where(itm => itm.Active)
                     .Select(itm => new
                 {
-                    id = itm.Id,
-                    name = itm.OperationFriendlyName,
-                    pageId = itm.PageId.Value,
                     topicId = itm.TopicId,
-                    reason = itm.Reason
+                    name = itm.Name,
+                    dur = (now - itm.Created).ToString()
                 }),
                 
-                awaitingOperations = ServiceLocator.PersistentOperationsScheduler
-                    .GetAwaiting()
+                awaitingOperations = tasks.Where(itm => !itm.Active)
                     .Select(itm => new
-                {
-                    id = itm.Id,
-                    name = itm.OperationFriendlyName,
-                    pageId = itm.PageId.Value,
-                    topicId = itm.TopicId,
-                    reason = itm.Reason
-                }),
+                    {
+                        topicId = itm.TopicId,
+                        name = itm.Name,
+                        dur = (now - itm.Created).ToString()
+                    }),
                 
                 queuesSnapshotId = messageSnapshot.SnapshotId,
            

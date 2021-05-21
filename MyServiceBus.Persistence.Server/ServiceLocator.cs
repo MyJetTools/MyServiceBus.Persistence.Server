@@ -5,11 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.AzureStorage;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
-using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 using MyServiceBus.Persistence.Domains.Metrics;
+using MyServiceBus.Persistence.Domains.PersistenceOperations;
 using MyServiceBus.Persistence.Domains.TopicsAndQueues;
 using MyServiceBus.Persistence.Server.Services;
 
@@ -26,7 +26,7 @@ namespace MyServiceBus.Persistence.Server
 
         private static ActivePagesWarmerAndGc _activePagesWarmerAndGc;
 
-        public static PersistentOperationsScheduler PersistentOperationsScheduler { get; private set; }
+        public static TaskSchedulerByTopic TaskSchedulerByTopic { get; private set; }
         
         
         public static MaxPersistedMessageIdByTopic MaxPersistedMessageIdByTopic { get; private set; }
@@ -42,6 +42,9 @@ namespace MyServiceBus.Persistence.Server
         public static IAppLogger AppLogger { get; private set; }
         
         public static LogsSnapshotRepository LogsSnapshotRepository { get; private set; }
+        
+        
+        public static SyncAndGcBlobOperations SyncAndGcBlobOperations { get; private set; }
 
         public static CompressedMessagesUtils CompressedMessagesUtils { get; private set; }
         
@@ -59,6 +62,8 @@ namespace MyServiceBus.Persistence.Server
         public static PagesToCompressDetector PagesToCompressDetector { get; private set; }
         
         public static ILastCompressedPageStorage LastCompressedPageStorage { get; private set; }
+        
+        public static CompressPageBlobOperation CompressPageBlobOperation { get; private set; }
         
 
         private static async Task InitTopicsAsync(IServiceProvider sp)
@@ -81,7 +86,6 @@ namespace MyServiceBus.Persistence.Server
             
             var messagesTimeSpan = TimeSpan.Parse(settingsModel.FlushMessagesFreq);
             _taskTimerSyncMessages = new TaskTimer(messagesTimeSpan);  
-
             
             AppGlobalFlags = sp.GetRequiredService<AppGlobalFlags>();
             AppGlobalFlags.LoadBlobPagesSize = settingsModel.LoadBlobPagesSize;
@@ -93,10 +97,11 @@ namespace MyServiceBus.Persistence.Server
 
             _activePagesWarmerAndGc = sp.GetRequiredService<ActivePagesWarmerAndGc>();
 
-            PersistentOperationsScheduler = sp.GetRequiredService<PersistentOperationsScheduler>();
-            PersistentOperationsScheduler.RegisterServiceResolver(sp);
+            TaskSchedulerByTopic = sp.GetRequiredService<TaskSchedulerByTopic>();
 
             _queueSnapshotWriter = sp.GetRequiredService<QueueSnapshotWriter>();
+
+            CompressPageBlobOperation = sp.GetRequiredService<CompressPageBlobOperation>();
 
             CompressedMessagesStorage = sp.GetRequiredService<ICompressedMessagesStorage>(); 
 
@@ -113,8 +118,9 @@ namespace MyServiceBus.Persistence.Server
             IndexByMinuteWriter = sp.GetRequiredService<IndexByMinuteWriter>();
             
             
-            MaxPersistedMessageIdByTopic = sp.GetRequiredService<MaxPersistedMessageIdByTopic>();;
+            MaxPersistedMessageIdByTopic = sp.GetRequiredService<MaxPersistedMessageIdByTopic>();
 
+            SyncAndGcBlobOperations = sp.GetRequiredService<SyncAndGcBlobOperations>();
 
 
             Task.Run(() => InitTopicsAsync(sp));
@@ -136,7 +142,9 @@ namespace MyServiceBus.Persistence.Server
                 return new ValueTask();
             });
             
-            _taskTimerSyncMessages.Register("PersistentOperationsScheduler", PersistentOperationsScheduler.ExecuteOperationAsync);
+            
+                        
+            _taskTimerSyncMessages.Register("PersistentOperationsScheduler", SyncAndGcBlobOperations.SyncAndGc);
             
             _taskTimerSyncMessages.RegisterExceptionHandler((timer, e) =>
             {

@@ -60,6 +60,13 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         }
 
 
+        public IReadOnlyList<MessageContentGrpcModel> GetMessagesGreaterThen(long messageId)
+        {
+            //ToDo - Optimize with Binary Search
+            return _messages.Values.Where(itm => itm.MessageId > messageId).ToList();
+        }
+
+
 
         public  (IReadOnlyList<long> holes, int count)  TestIfThereAreHoles(long pageId)
         {

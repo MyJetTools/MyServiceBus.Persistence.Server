@@ -60,10 +60,10 @@ class HtmlRenderer
     
     private static renderActiveOperations(header:string, activeOperations:IPersistentOperation[]):string{
         
-        let result = '<h1>'+header+'</h1><table class="table table-striped"><tr><th>Name</th><th>Topic</th><th>PageId</th><th>Reason</th></tr>';
+        let result = '<h1>'+header+'</h1><table class="table table-striped"><tr><th>Topic</th><th>Action</th></tr>';
         
         for (let op of activeOperations){
-            result +='<tr><td>'+op.name+'<div>'+op.id+'</div></td><td>'+op.topicId+'</td><td>'+op.pageId+'</td><td>'+op.reason+'</td></tr>';
+            result +='<tr><td style="font-size:10px">'+op.topicId+'<div>'+op.dur+'</div></td><td style="font-size:10px">'+op.name+'</td></tr>';
         }
         
         return result+"</table>";

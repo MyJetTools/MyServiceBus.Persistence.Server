@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
+using MyServiceBus.Persistence.Domains.BackgroundJobs;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
+using MyServiceBus.Persistence.Domains.PersistenceOperations;
 using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.MessagesContent
@@ -11,27 +12,42 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
     public class MessagesContentReader
     {
         private readonly MessagesContentCache _messagesContentCache;
-        private readonly PersistentOperationsScheduler _persistentOperationsScheduler;
+
         private readonly IIndexByMinuteStorage _indexByMinuteStorage;
+        private readonly TaskSchedulerByTopic _taskSchedulerByTopic;
+        private readonly RestorePageFromBlobOperation _restorePageFromBlobOperation;
 
         public MessagesContentReader(MessagesContentCache messagesContentCache,
-            PersistentOperationsScheduler persistentOperationsScheduler, IIndexByMinuteStorage indexByMinuteStorage)
+            IIndexByMinuteStorage indexByMinuteStorage, TaskSchedulerByTopic taskSchedulerByTopic, 
+            RestorePageFromBlobOperation restorePageFromBlobOperation)
         {
             _messagesContentCache = messagesContentCache;
-            _persistentOperationsScheduler = persistentOperationsScheduler;
             _indexByMinuteStorage = indexByMinuteStorage;
+            _taskSchedulerByTopic = taskSchedulerByTopic;
+            _restorePageFromBlobOperation = restorePageFromBlobOperation;
         }
         
         
         
 
-        public ValueTask<IMessageContentPage> TryGetPageAsync(string topicId, MessagePageId pageId, string reason)
+        public async ValueTask<IMessageContentPage> TryGetPageAsync(string topicId, MessagePageId pageId, string reason)
         {
             var page = _messagesContentCache.TryGetPage(topicId, pageId);
 
-            return page != null 
-                ? new ValueTask<IMessageContentPage>(page) 
-                : new ValueTask<IMessageContentPage>(_persistentOperationsScheduler.RestorePageAsync(topicId, false, pageId, reason));
+            if (page != null)
+                return page;
+
+
+            IMessageContentPage result = null;
+
+
+            await _taskSchedulerByTopic.ExecuteTaskAsync(topicId, "Getting page: " + pageId, async () =>
+            {
+                result = await _restorePageFromBlobOperation.TryRestoreFromCompressedPage(topicId, pageId) 
+                         ?? await _restorePageFromBlobOperation.TryRestoreFromUncompressedPage(topicId, pageId);
+            });
+
+            return result;
         }
 
         public async Task<(MessageContentGrpcModel message, IMessageContentPage page)> TryGetMessageAsync(string topicId, long messageId, string reason)

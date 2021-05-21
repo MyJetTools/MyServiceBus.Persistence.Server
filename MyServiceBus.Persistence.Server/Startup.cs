@@ -1,9 +1,11 @@
 using System;
+using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MyServiceBus.Persistence.Domains;
+using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Server.Grpc;
 using MyServiceBus.Persistence.Server.Middlewares;
 using Prometheus;
@@ -29,8 +31,9 @@ namespace MyServiceBus.Persistence.Server
 
             services.AddMvc(o => { o.EnableEndpointRouting = false; });
 
-            _services.BindAzureServices(Settings);
-            _services.BindMyServiceBusPersistenceServices();
+            var globalFlags = new AppGlobalFlags();
+            _services.BindAzureServices(Settings, globalFlags);
+            _services.BindMyServiceBusPersistenceServices(globalFlags);
 
             services.AddSwaggerDocument(o => o.Title = "MyServiceBus-Persistence");
         }
@@ -47,6 +50,25 @@ namespace MyServiceBus.Persistence.Server
                 foreach (var (topic, messageId) in ServiceLocator.MaxPersistedMessageIdByTopic.GetSnapshot())
                 {
                    ServiceLocator.AppLogger.AddLog(LogProcess.System, topic, "Last Save message before shutdown", messageId.ToString());
+
+
+                   var pageId = MessagesContentPagesUtils.GetPageId(messageId);
+
+                   var page = ServiceLocator.MessagesContentCache.TryGetPage(topic, pageId);
+
+                   if (page != null)
+                   {
+
+                       var messages = page.GetMessages();
+                       if (messages.Count > 0)
+                       {
+                           var minId = messages.Min(itm => itm.MessageId);
+                           var maxId = messages.Max(itm => itm.MessageId);
+                           ServiceLocator.AppLogger.AddLog(LogProcess.System, topic, "Last messages in Cache before shutdown", $"Min={minId};Max={maxId}");
+                       }
+                       
+                   }
+
                 }
                 
                 var snapshot = ((AppLogger)ServiceLocator.AppLogger).GetSnapshot();

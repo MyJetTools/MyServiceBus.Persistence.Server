@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="AsyncUtilities" Version="1.0.1" />
       <PackageReference Include="MyAzureBlob" Version="1.0.5" />
       <PackageReference Include="MyAzurePageBlobs" Version="1.0.16" />
       <PackageReference Include="MyAzurePageBlobs.DataBuilder" Version="1.0.22" />

@@ -1,48 +1,40 @@
 using System;
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
-using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
 
 namespace MyServiceBus.Persistence.Domains
 {
     public class ServicesDisposer
     {
-
-        private readonly PersistentOperationsScheduler _persistentOperationsScheduler;
+        private readonly TaskSchedulerByTopic _taskSchedulerByTopic;
         private readonly QueueSnapshotWriter _queueSnapshotWriter;
 
-        public ServicesDisposer(PersistentOperationsScheduler persistentOperationsScheduler, 
+        public ServicesDisposer(TaskSchedulerByTopic taskSchedulerByTopic, 
             QueueSnapshotWriter queueSnapshotWriter)
         {
-            _persistentOperationsScheduler = persistentOperationsScheduler;
+            _taskSchedulerByTopic = taskSchedulerByTopic;
             _queueSnapshotWriter = queueSnapshotWriter;
         }
 
         public async Task Shutdown()
         {
-            await Task.Delay(300);
+            await Task.Delay(500);
             
             var hasOperationsToFinish = true;
             
             while (hasOperationsToFinish)
             {
-                hasOperationsToFinish = false;
+                var tasks = _taskSchedulerByTopic.GetTasksAmount();
 
-                Console.WriteLine("Persistent Queue size is: "+ _persistentOperationsScheduler.GetQueueSize());
-                Console.WriteLine("Active Operations Are: "+ _persistentOperationsScheduler.GetActiveOperations().Count);
-                
-                if (_persistentOperationsScheduler.HasOperationsToExecute())
-                {
-                    hasOperationsToFinish = true;
-                    await _persistentOperationsScheduler.ExecuteOperationAsync();
-                }
+                Console.WriteLine("Pending tasks are: "+ tasks.pendingTasks);
+                Console.WriteLine("Active tasks are: "+ tasks.activeTasks);
 
                 await Task.Delay(500);
-
+                
+                hasOperationsToFinish = tasks.pendingTasks > 0 || tasks.activeTasks > 0;
             }
             
-            Console.WriteLine("Persistent Queue size is: "+ _persistentOperationsScheduler.GetQueueSize());
-
+            Console.WriteLine("All tasks are finished");
             
             await _queueSnapshotWriter.ExecuteAsync();
         }

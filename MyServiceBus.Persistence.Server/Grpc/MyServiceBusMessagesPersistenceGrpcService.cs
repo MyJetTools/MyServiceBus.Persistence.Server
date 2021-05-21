@@ -51,9 +51,11 @@ namespace MyServiceBus.Persistence.Server.Grpc
             foreach (var group in groups)
             {
                 var messagePageId = new MessagePageId(group.Key);
-                ServiceLocator.PersistentOperationsScheduler.WriteMessagesAsync(contract.TopicId, "GRPC Request", messagePageId, group);
-                var page = ServiceLocator.MessagesContentCache.GetOrCreateWritablePage(contract.TopicId, messagePageId);
-                page.Add(group);
+             
+                 var storage = await ServiceLocator.MessagesContentPersistentStorage.GetOrCreateAsync(contract.TopicId, messagePageId);
+                 var page = storage.GetAssignedPage();
+                 page.Add(group);
+  
             }
 
         }

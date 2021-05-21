@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
-using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
 using MyServiceBus.Persistence.Domains.MessagesContent;
+using MyServiceBus.Persistence.Domains.PersistenceOperations;
 using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
@@ -13,20 +13,23 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
         private readonly QueueSnapshotCache _queueSnapshotCache;
         private readonly ITopicsAndQueuesSnapshotStorage _storage;
         private readonly QueueSnapshotWriter _queueSnapshotWriter;
-        private readonly PersistentOperationsScheduler _persistentOperationsScheduler;
         private readonly AppGlobalFlags _appGlobalFlags;
         private readonly IAppLogger _appLogger;
+        private readonly TaskSchedulerByTopic _schedulerByTopic;
+        private readonly RestorePageFromBlobOperation _restorePageFromBlobOperation;
 
         public TopicAndQueueInitializer(QueueSnapshotCache queueSnapshotCache,
             ITopicsAndQueuesSnapshotStorage storage, QueueSnapshotWriter queueSnapshotWriter, 
-            PersistentOperationsScheduler persistentOperationsScheduler, AppGlobalFlags appGlobalFlags, IAppLogger appLogger)
+             AppGlobalFlags appGlobalFlags, IAppLogger appLogger, TaskSchedulerByTopic schedulerByTopic,
+            RestorePageFromBlobOperation restorePageFromBlobOperation)
         {
             _queueSnapshotCache = queueSnapshotCache;
             _storage = storage;
             _queueSnapshotWriter = queueSnapshotWriter;
-            _persistentOperationsScheduler = persistentOperationsScheduler;
             _appGlobalFlags = appGlobalFlags;
             _appLogger = appLogger;
+            _schedulerByTopic = schedulerByTopic;
+            _restorePageFromBlobOperation = restorePageFromBlobOperation;
         }
 
         private async Task<IReadOnlyList<TopicAndQueuesSnapshotGrpcModel>> InitQueueSnapshot()
@@ -61,16 +64,20 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
             foreach (var topicAndQueuesSnapshot in fullSnapshot)
             {
                 var pageId = MessagesContentPagesUtils.GetPageId(topicAndQueuesSnapshot.MessageId);
+
+                var task = _schedulerByTopic.ExecuteTaskAsync(topicAndQueuesSnapshot.TopicId, "Init: "+pageId, async () =>
+                {
+                    await _restorePageFromBlobOperation.TryRestoreFromUncompressedPage(topicAndQueuesSnapshot.TopicId, pageId);
+                });
                 
-                var task =  _persistentOperationsScheduler.RestorePageAsync(topicAndQueuesSnapshot.TopicId, true, pageId, "Init");
                 tasks.Add(task);
             }
 
             await Task.WhenAll(tasks);
+
             _appGlobalFlags.Initialized = true;
             
             _appLogger.AddLog(LogProcess.System, null, "SYSTEM", "Application Initialized");
-            
         }
   
     }

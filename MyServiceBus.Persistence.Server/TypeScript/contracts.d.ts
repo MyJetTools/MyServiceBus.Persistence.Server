@@ -20,11 +20,9 @@ interface IQueueRange{
 }
 
 interface IPersistentOperation{
-    id:string;
     name:string;
     topicId:string;
-    pageId:number;
-    reason:string;
+    dur:string
 }
 
 interface IStatus{

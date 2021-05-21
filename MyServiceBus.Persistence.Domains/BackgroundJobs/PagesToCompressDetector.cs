@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
-using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
@@ -12,7 +10,6 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
 {
     public class PagesToCompressDetector
     {
-        private readonly PersistentOperationsScheduler _scheduler;
         private readonly IndexByMinuteWriter _indexByMinuteWriter;
         private readonly IAppLogger _appLogger;
         private readonly QueueSnapshotCache _queueSnapshotCache;
@@ -20,13 +17,14 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
         private readonly ILastCompressedPageStorage _lastCompressedPageStorage;
         private readonly MessagesContentReader _messagesContentReader;
         private readonly ICompressedMessagesStorage _compressedMessagesStorage;
+        private readonly TaskSchedulerByTopic _schedulerByTopic;
 
-        public PagesToCompressDetector(PersistentOperationsScheduler scheduler, IndexByMinuteWriter indexByMinuteWriter,
+        public PagesToCompressDetector(IndexByMinuteWriter indexByMinuteWriter,
             IAppLogger appLogger, QueueSnapshotCache queueSnapshotCache, AppGlobalFlags appGlobalFlags,
             ILastCompressedPageStorage lastCompressedPageStorage,
-            MessagesContentReader messagesContentReader, ICompressedMessagesStorage compressedMessagesStorage)
+            MessagesContentReader messagesContentReader, ICompressedMessagesStorage compressedMessagesStorage,
+            TaskSchedulerByTopic schedulerByTopic)
         {
-            _scheduler = scheduler;
             _indexByMinuteWriter = indexByMinuteWriter;
             _appLogger = appLogger;
             _queueSnapshotCache = queueSnapshotCache;
@@ -34,6 +32,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
             _lastCompressedPageStorage = lastCompressedPageStorage;
             _messagesContentReader = messagesContentReader;
             _compressedMessagesStorage = compressedMessagesStorage;
+            _schedulerByTopic = schedulerByTopic;
         }
 
 
@@ -82,15 +81,15 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
 
             }
 
-
         }
-
 
         public async ValueTask TimerAsync()
         {
 
             if (!_appGlobalFlags.Initialized)
                 return;
+
+            List<Task> tasks = null; 
 
 
             await foreach (var (topicId, page) in GetPageToCompressAsync())
@@ -99,21 +98,27 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
                     return;
 
                 _appLogger.AddLog(LogProcess.PagesCompressor, topicId,  "Page:"+page.PageId.Value, $"Detected the page which has to be compressed");
-                await _scheduler.CompressPageAsync(topicId, page, "Compressor Detector");
                 
-                await _lastCompressedPageStorage.SaveLastCompressedPageStorageAsync(topicId,
-                    page.PageId);
+                var task = _schedulerByTopic.ExecuteTaskAsync(topicId,  "Compress Page",() => CompressPageAsync(topicId, page));
 
-
-         
-                _appLogger.AddLog(LogProcess.PagesCompressor, topicId,"Page:"+page.PageId.Value,
-                    "Page compressed and saved");
-
-                _indexByMinuteWriter.NewMessages(topicId, page.GetMessages());
+                tasks ??= new List<Task>();
+                tasks.Add(task);
             }
+
+            if (tasks != null)
+                await Task.WhenAll(tasks);
         }
 
+        private async Task CompressPageAsync(string topicId, IMessageContentPage page)
+        {
+            await _lastCompressedPageStorage.SaveLastCompressedPageStorageAsync(topicId,
+                page.PageId);
+         
+            _appLogger.AddLog(LogProcess.PagesCompressor, topicId,"Page:"+page.PageId.Value,
+                "Page compressed and saved");
 
+            _indexByMinuteWriter.NewMessages(topicId, page.GetMessages());
+        }
 
     }
 

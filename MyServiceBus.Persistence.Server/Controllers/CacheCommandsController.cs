@@ -36,9 +36,19 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 };
             }
 
-            var page = await ServiceLocator.MessagesContentReader.TryGetPageAsync(topicId, messagePageId, "API-Request");
+            await ServiceLocator.TaskSchedulerByTopic.ExecuteTaskAsync(topicId,  "Compressing page by REST API request",
+                async () =>
+                {
 
-            await ServiceLocator.PersistentOperationsScheduler.CompressPageAsync(topicId, page, "API request");
+                    var page = ServiceLocator.MessagesContentCache.TryGetPage(topicId, messagePageId);
+                    
+                    if (page == null)
+                       await ServiceLocator.MessagesContentReader.TryGetPageAsync(topicId, messagePageId, "API-Request");
+                    
+                    if (page != null)
+                        await ServiceLocator.CompressPageBlobOperation.ExecuteOperationAsync(topicId, messagePageId, page);
+
+                });
 
             return new CompressPageResult
             {

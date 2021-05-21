@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 
 namespace MyServiceBus.Persistence.Domains.MessagesContent
@@ -18,14 +17,14 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
                 TopicId = topicId;
             }
             public string TopicId { get; }
-            public readonly Dictionary<long, IMessageContentPage> Dictionary = new Dictionary<long, IMessageContentPage>();
-            public readonly ReaderWriterLockSlim ReaderWriterLockSlim = new ReaderWriterLockSlim();
-            
+            public readonly Dictionary<long, IMessageContentPage> Dictionary = new ();
             
         }
         
         private readonly Dictionary<string, TopicContentGroup> _cache 
-            = new Dictionary<string, TopicContentGroup>();
+            = new ();
+
+        private IReadOnlyList<string> _topicsAsList = Array.Empty<string>();
 
 
         public IMessageContentPage TryGetPage(string topicId, MessagePageId pageId)
@@ -39,12 +38,18 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             }
         }
 
+        
+        
         public IMessageContentPage AddPage(string topicId, IMessageContentPage page)
         {
             lock (_cache)
             {
                 if (!_cache.ContainsKey(topicId))
+                {
                     _cache.Add(topicId, new TopicContentGroup(topicId));
+                    _topicsAsList = _cache.Keys.ToList();
+                }
+                    
                 
                 var topicContentGroup = _cache[topicId];
 
@@ -55,47 +60,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
                 return page;
             }
         }
+
         
-        public WritableContentCachePage GetOrCreateWritablePage(string topicId, MessagePageId pageId)
-        {
-            lock (_cache)
-            {
-                if (!_cache.ContainsKey(topicId))
-                    _cache.Add(topicId, new TopicContentGroup(topicId));
-
-                var subDictionary = _cache[topicId];
-
-                if (!subDictionary.Dictionary.ContainsKey(pageId.Value))
-                {
-                    var writeContent = new WritableContentCachePage(subDictionary.ReaderWriterLockSlim, pageId);
-                    subDictionary.Dictionary.Add(pageId.Value, writeContent);
-                    return writeContent;
-                }
-
-                var page = subDictionary.Dictionary[pageId.Value];
-
-                switch (page)
-                {
-                    case WritableContentCachePage writableContentCachePage:
-                        return writableContentCachePage;
-                    
-                    case ReadOnlyContentPage readOnlyContentPage:
-                    {
-                        var writablePage =
-                            WritableContentCachePage.Create(subDictionary.ReaderWriterLockSlim, readOnlyContentPage);
-
-                        subDictionary.Dictionary[pageId.Value] = writablePage;
-
-                        return writablePage;
-                    }
-                    
-                    default:
-                        throw new Exception("Unsupportable type of Page content");
-                    
-                }
-            }
-        }
-
         public Dictionary<string, (int loadedPages, long contentSize)> GetMetrics()
         {
             var result = new Dictionary<string, (int loadedPages, long contentSize)>();
@@ -142,6 +108,11 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
                 if (group.Dictionary.ContainsKey(pageId.Value))
                     group.Dictionary.Remove(pageId.Value);
             }
+        }
+
+        public IReadOnlyList<string> GetTopics()
+        {
+            return _topicsAsList;
         }
     }
 }

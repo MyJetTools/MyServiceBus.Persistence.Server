@@ -41,10 +41,10 @@ var HtmlRenderer = /** @class */ (function () {
         return '<div>Queue SnapshotId: ' + r.queuesSnapshotId + '</div>';
     };
     HtmlRenderer.renderActiveOperations = function (header, activeOperations) {
-        var result = '<h1>' + header + '</h1><table class="table table-striped"><tr><th>Name</th><th>Topic</th><th>PageId</th><th>Reason</th></tr>';
+        var result = '<h1>' + header + '</h1><table class="table table-striped"><tr><th>Topic</th><th>Action</th></tr>';
         for (var _i = 0, activeOperations_1 = activeOperations; _i < activeOperations_1.length; _i++) {
             var op = activeOperations_1[_i];
-            result += '<tr><td>' + op.name + '<div>' + op.id + '</div></td><td>' + op.topicId + '</td><td>' + op.pageId + '</td><td>' + op.reason + '</td></tr>';
+            result += '<tr><td style="font-size:10px">' + op.topicId + '<div>' + op.dur + '</div></td><td style="font-size:10px">' + op.name + '</td></tr>';
         }
         return result + "</table>";
     };

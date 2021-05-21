@@ -11,23 +11,23 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
         private readonly MessagesContentCache _messagesContentCache;
         private readonly MessagesContentReader _messagesContentReader;
         private readonly IAppLogger _logger;
+        private readonly IMessagesContentPersistentStorage _messagesContentPersistentStorage;
         private readonly AppGlobalFlags _appGlobalFlags;
         
         
         public readonly TimeSpan GcDelay = TimeSpan.FromSeconds(30);
 
         public ActivePagesWarmerAndGc(QueueSnapshotCache queueSnapshotCache, MessagesContentCache messagesContentCache,
-            MessagesContentReader messagesContentReader, IAppLogger logger, 
+            MessagesContentReader messagesContentReader, IAppLogger logger, IMessagesContentPersistentStorage messagesContentPersistentStorage,
             AppGlobalFlags appGlobalFlags)
         {
             _queueSnapshotCache = queueSnapshotCache;
             _messagesContentCache = messagesContentCache;
             _messagesContentReader = messagesContentReader;
             _logger = logger;
+            _messagesContentPersistentStorage = messagesContentPersistentStorage;
             _appGlobalFlags = appGlobalFlags;
         }
-
-
 
 
         public async ValueTask CheckAndWarmItUpAsync()
@@ -65,6 +65,8 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
                     
                     if (DateTime.UtcNow  - page.LastAccessTime < GcDelay)
                         continue;
+
+                    await _messagesContentPersistentStorage.GcAsync(topicSnapshot.TopicId, pageToGc);
 
                     _messagesContentCache.DisposePage(topicSnapshot.TopicId, pageToGc);
                 }

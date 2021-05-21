@@ -1,27 +1,27 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 {
     public class WritableContentCachePage : IMessageContentPage
     {
-        private readonly ReaderWriterLockSlim _readerWriterLockSlim;
-
+        private readonly ReaderWriterLockSlim _readerWriterLockSlim = new ();
 
         private readonly MessagesContentDictionary _messages = new ();
+        
+        
+        public long MaxPageId { get; private set; }
 
-        public WritableContentCachePage(ReaderWriterLockSlim readerWriterLockSlim, MessagePageId pageId)
+        public WritableContentCachePage(MessagePageId pageId)
         {
-            _readerWriterLockSlim = readerWriterLockSlim;
             PageId = pageId;
-            LastAccessTime = DateTime.UtcNow;
+
         }
         
-        public WritableContentCachePage(ReaderWriterLockSlim readerWriterLockSlim, MessagePageId pageId, IReadOnlyList<MessageContentGrpcModel> initMessages):
-            this(readerWriterLockSlim, pageId)
+        public WritableContentCachePage(MessagePageId pageId, IReadOnlyList<MessageContentGrpcModel> initMessages):
+            this(pageId)
         {
             _messages.Init(initMessages);
         }
@@ -34,6 +34,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                 foreach (var grpcModel in messagesToAdd)
                 {
                     _messages.AddOrUpdate(grpcModel);
+
+                    if (MaxPageId < grpcModel.MessageId)
+                        MaxPageId = grpcModel.MessageId;
                 }
 
             }
@@ -45,9 +48,24 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             }
         }
 
-        public DateTime LastAccessTime { get; private set; }
+        public DateTime LastAccessTime { get; private set; } =DateTime.UtcNow;
         public int Count { get; private set; }
         public long TotalContentSize => _messages.TotalContentSize;
+
+        
+        public IReadOnlyList<MessageContentGrpcModel> GetMessagesGreaterThen(long messageId)
+        {
+            _readerWriterLockSlim.EnterReadLock();
+            try
+            {
+                return _messages.GetMessagesGreaterThen(messageId);
+
+            }
+            finally
+            {
+                _readerWriterLockSlim.ExitReadLock();
+            }
+        }
 
         public IReadOnlyList<MessageContentGrpcModel> GetMessages()
         {
@@ -90,13 +108,14 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             } 
         }
 
-        public static WritableContentCachePage Create(ReaderWriterLockSlim readerWriterLockSlim, IMessageContentPage messageContent)
+        public static WritableContentCachePage Create(IMessageContentPage messageContent)
         {
-            var result =  new WritableContentCachePage(readerWriterLockSlim, messageContent.PageId);
+            var result =  new WritableContentCachePage(messageContent.PageId);
             result._messages.Init(messageContent.GetMessages());
             return result;
         }
-        
+
+
 
     }
 }
