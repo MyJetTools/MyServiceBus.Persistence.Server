@@ -13,11 +13,9 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
         private readonly Func<(string topicId, ClusterPageId pageCluserId), IAzurePageBlob> _getAzurePageBlob;
 
         private readonly List<PagesCluster> _cacheOfIndexPages = new List<PagesCluster>();
-        private readonly IAppLogger _appLogger;
-        public CompressedMessagesStorage(Func<(string topicId, ClusterPageId pageCluserId), IAzurePageBlob> getAzurePageBlob, IAppLogger appLogger)
+        public CompressedMessagesStorage(Func<(string topicId, ClusterPageId pageCluserId), IAzurePageBlob> getAzurePageBlob)
         {
             _getAzurePageBlob = getAzurePageBlob;
-            _appLogger = appLogger;
         }
 
         private PagesCluster GetPagesCluster(string topicId, MessagePageId messagePageId)
@@ -36,9 +34,9 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
             return result;
         }
 
-        public async Task WriteCompressedPageAsync(string topicId, MessagePageId pageId, CompressedPage pageData)
+        public async Task WriteCompressedPageAsync(string topicId, MessagePageId pageId, CompressedPage pageData, IAppLogger appLogger)
         {
-            _appLogger?.AddLog(LogProcess.PagesCompressor, "Topic: +"+topicId+"; pageId: "+pageId.Value, $"Compressed page size is: {pageData.Content.Length}");
+            appLogger.AddLog(LogProcess.PagesCompressor, "Topic: +"+topicId+"; pageId: "+pageId.Value, $"Compressed page size is: {pageData.Content.Length}");
             var pagesCluster = GetPagesCluster(topicId, pageId);
             await pagesCluster.WriteAsync(pageId, pageData);
         }

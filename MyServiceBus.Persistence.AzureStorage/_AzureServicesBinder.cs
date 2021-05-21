@@ -24,7 +24,6 @@ namespace MyServiceBus.Persistence.AzureStorage
         
         private const string FileMask = "0000000000000000000";
 
-        public static IAppLogger AppLogger;
 
         public static void BindMessagesPersistentStorage(this IServiceCollection sc, CloudStorageAccount cloudStorageAccount)
         {
@@ -38,7 +37,7 @@ namespace MyServiceBus.Persistence.AzureStorage
             {
                 var fileName = "cluster-"+parameters.pageCluserId.Value.ToString(FileMask)+".zip";
                 return new MyAzurePageBlob(cloudStorageAccount, parameters.topicId, fileName);
-            }, AppLogger));
+            }));
             
             sc.AddSingleton<ILegacyCompressedMessagesStorage>(new LegacyCompressedMessagesStorage(parameters =>
             {

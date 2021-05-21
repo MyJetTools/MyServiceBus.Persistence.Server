@@ -39,7 +39,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             }
             
             _appLogger.AddLog(LogProcess.PagesCompressor,   TopicId, $"Writing Compressed data for page {PageId}. Messages: "+_contentPage.Count);
-            await _compressedMessagesStorage.WriteCompressedPageAsync(TopicId, PageId, compressedPage);
+            await _compressedMessagesStorage.WriteCompressedPageAsync(TopicId, PageId, compressedPage, _appLogger);
             
 
             

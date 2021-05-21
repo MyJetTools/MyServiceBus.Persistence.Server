@@ -6,7 +6,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
 {
     public interface ICompressedMessagesStorage
     {
-        Task WriteCompressedPageAsync(string topicId, MessagePageId pageId, CompressedPage pageData);
+        Task WriteCompressedPageAsync(string topicId, MessagePageId pageId, CompressedPage pageData, IAppLogger appLogger);
         
         Task<CompressedPage> GetCompressedPageAsync(string topicId, MessagePageId pageId);
 
@@ -18,10 +18,10 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
     public static class CompressedMessagesStorageExtensions
     {
         public static async ValueTask WriteCompressedPageAsync(this ICompressedMessagesStorage storage,
-            string topicId, IMessageContentPage page)
+            string topicId, IMessageContentPage page, IAppLogger appLogger)
         {
             var compressedPage = page.GetCompressedPage();
-            await storage.WriteCompressedPageAsync(topicId, page.PageId, compressedPage);
+            await storage.WriteCompressedPageAsync(topicId, page.PageId, compressedPage, appLogger);
         }
     }
 }

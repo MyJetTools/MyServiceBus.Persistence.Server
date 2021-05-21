@@ -113,7 +113,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 if (!pageData.Content.IsEmpty)
                 {
                     Console.WriteLine("Writing: "+topicId+"/"+pageId.Value);
-                    await ServiceLocator.CompressedMessagesStorage.WriteCompressedPageAsync(topicId, pageId, pageData);
+                    await ServiceLocator.CompressedMessagesStorage.WriteCompressedPageAsync(topicId, pageId, pageData, ServiceLocator.AppLogger);
                 }
             }
         }
