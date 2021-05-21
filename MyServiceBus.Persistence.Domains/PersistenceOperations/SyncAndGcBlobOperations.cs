@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
 using MyServiceBus.Persistence.Domains.MessagesContent;
+using MyServiceBus.Persistence.Domains.Metrics;
 
 namespace MyServiceBus.Persistence.Domains.PersistenceOperations
 {
@@ -10,14 +11,17 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
         private readonly MessagesContentCache _messagesContentCache;
         private readonly TaskSchedulerByTopic _taskSchedulerByTopic;
         private readonly AppGlobalFlags _appGlobalFlags;
+        private readonly MaxPersistedMessageIdByTopic _maxPersistedMessageIdByTopic;
 
         public SyncAndGcBlobOperations(IMessagesContentPersistentStorage messagesContentPersistentStorage,
-            MessagesContentCache messagesContentCache, TaskSchedulerByTopic taskSchedulerByTopic, AppGlobalFlags appGlobalFlags)
+            MessagesContentCache messagesContentCache, TaskSchedulerByTopic taskSchedulerByTopic, AppGlobalFlags appGlobalFlags, 
+            MaxPersistedMessageIdByTopic maxPersistedMessageIdByTopic)
         {
             _messagesContentPersistentStorage = messagesContentPersistentStorage;
             _messagesContentCache = messagesContentCache;
             _taskSchedulerByTopic = taskSchedulerByTopic;
             _appGlobalFlags = appGlobalFlags;
+            _maxPersistedMessageIdByTopic = maxPersistedMessageIdByTopic;
         }
 
 
@@ -31,7 +35,16 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
 
             foreach (var topic in topics)
             {
-                await _taskSchedulerByTopic.ExecuteTaskAsync(topic, "Sync blobs", ()=>_messagesContentPersistentStorage.SyncAsync(topic));
+                await _taskSchedulerByTopic.ExecuteTaskAsync(topic, "Sync blobs", async ()=>
+                {
+                    
+                    var messageId =  await _messagesContentPersistentStorage.SyncAsync(topic);
+                    
+                    if (messageId>0)
+                        _maxPersistedMessageIdByTopic.Update(topic, messageId);
+                    
+                    
+                });
     
             }
 

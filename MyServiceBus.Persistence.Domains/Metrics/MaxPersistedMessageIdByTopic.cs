@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.Metrics
 {
@@ -15,28 +14,21 @@ namespace MyServiceBus.Persistence.Domains.Metrics
             }
         }
 
-        public void Update(string topic, IEnumerable<MessageContentGrpcModel> messages)
+        public void Update(string topic, long messageId)
         {
 
             lock (_maxMessageId)
             {
-
-                foreach (var msg in messages)
+                if (_maxMessageId.ContainsKey(topic))
                 {
-                    if (_maxMessageId.ContainsKey(topic))
-                    {
-                        if (_maxMessageId[topic] < msg.MessageId)
-                        {
-                            _maxMessageId[topic] = msg.MessageId;    
-                        }
-                    }
-                    else
-                    {
-                        _maxMessageId.Add(topic, msg.MessageId);
-                    }
+                    _maxMessageId[topic] = messageId;
+                }
+                else
+                {
+                    _maxMessageId.Add(topic, messageId);
                 }
             }
-            
+
         }
 
         public long GetOrDefault(string topicId)
