@@ -7,6 +7,30 @@ namespace MyServiceBus.Persistence.Server.Controllers
     [ApiController]
     public class LogsController : Controller
     {
+        
+        
+        [HttpGet("/logs")]
+        public IActionResult Logs()
+        {
+            var logs = ServiceLocator.AppLogger.Get(LogProcess.All);
+
+            var sb = new StringBuilder();
+            foreach (var item in logs)
+            {
+                sb.AppendLine(item.DateTime.ToString("O") + $" Ctx: {item.Context}");
+                sb.AppendLine("Message: " + item.Message);
+                
+                if (item.StackTrace != null)
+                    sb.AppendLine("StackTrace: " + item.StackTrace);
+
+                sb.AppendLine("----------------------");
+            }
+
+            return Content(sb.ToString());
+
+        }
+        
+        
         [HttpGet("/logs/{logProcess}")]
         public IActionResult Logs(LogProcess logProcess)
         {

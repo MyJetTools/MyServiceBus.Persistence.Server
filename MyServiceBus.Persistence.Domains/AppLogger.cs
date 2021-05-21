@@ -23,7 +23,7 @@ namespace MyServiceBus.Persistence.Domains
 
     public enum LogProcess
     {
-        System, PagesCompressor, PagesLoaderOrGc, MinuteIndexWriter
+        All, System, PagesCompressor, PagesLoaderOrGc, MinuteIndexWriter
     }
     
     
@@ -66,6 +66,10 @@ namespace MyServiceBus.Persistence.Domains
             {
 
                 var logItems = _logItems[logProcess];
+                logItems.Enqueue(newItem);
+                GcLogItems(logItems);
+
+                logItems = _logItems[LogProcess.All];
                 logItems.Enqueue(newItem);
                 GcLogItems(logItems);
             }
