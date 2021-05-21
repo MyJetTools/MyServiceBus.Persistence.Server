@@ -29,7 +29,7 @@ var HtmlRenderer = /** @class */ (function () {
                 activePagesBadges += '<span class="badge badge-warning" style="margin-left: 5px">' + activePage + '</span>';
             }
             var queuesContent = this.renderQueuesTableContent(page.queues);
-            result += '<tr><td>' + page.topicId + '<div>WritePos: ' + page.writePosition + '</div></td><td>' + queuesContent + '</td><td>' + page.messageId + '</td><td><div>Active:</div>' + activePagesBadges + '<hr/><div>Loaded:</div>' + badges + '</td></tr>';
+            result += '<tr><td>' + page.topicId + '<div>WritePos: ' + page.writePosition + '</div></td><td>' + queuesContent + '</td><td><div>Max:' + page.messageId + '</div><div>Saved:' + page.savedMessageId + '</div></td><td><div>Active:</div>' + activePagesBadges + '<hr/><div>Loaded:</div>' + badges + '</td></tr>';
         }
         return result;
     };
@@ -55,9 +55,9 @@ var HtmlRenderer = /** @class */ (function () {
     };
     HtmlRenderer.renderMainContent = function (r) {
         var leftPart = this.renderMainTable(r.loadedPages);
-        var rightPart = this.renderActiveOperations("Awaiting operations", r.awaitingOperations) +
-            this.renderActiveOperations("Active operations", r.activeOperations) +
-            this.renderAdditionalFields(r);
+        var rightPart = this.renderActiveOperations("Active operations", r.activeOperations) +
+            this.renderAdditionalFields(r) +
+            this.renderActiveOperations("Awaiting operations", r.awaitingOperations);
         return this.splitPage(leftPart, rightPart);
     };
     return HtmlRenderer;

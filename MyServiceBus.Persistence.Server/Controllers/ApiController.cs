@@ -61,6 +61,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                         topicId = itm.Key,
                         writePosition = PageWriter.GetWritePosition(itm.Key),
                         messageId = snapshot?.MessageId ?? -1,
+                        savedMessageId = ServiceLocator.MaxPersistedMessageIdByTopic.GetOrDefault(itm.Key),
                         pages = itm.Value.OrderBy(pageId => pageId),
                         activePages = (snapshot?.GetActivePages()
                                 .Select(messagePageId => messagePageId.Value) ?? Array.Empty<long>())

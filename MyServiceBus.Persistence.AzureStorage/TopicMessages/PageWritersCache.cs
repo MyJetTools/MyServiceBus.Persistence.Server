@@ -10,7 +10,6 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         private readonly Dictionary<string, List<PageWriter>> _pageWriters
             = new Dictionary<string, List<PageWriter>>();
 
-
         private void GcPageWriter(List<PageWriter> topicPageWriters)
         {
 
@@ -24,26 +23,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             }
             
         }
-        
 
-        public void Add(PageWriter pageWriter)
-        {
-
-            lock (_pageWriters)
-            {
-                if (!_pageWriters.ContainsKey(pageWriter.TopicId))
-                    _pageWriters.Add(pageWriter.TopicId, new List<PageWriter>());
-                
-                var topicPageWriters = _pageWriters[pageWriter.TopicId];
-                
-                if (topicPageWriters.Any(itm => itm.PageId.EqualsWith(pageWriter.PageId)))
-                    return;
-                
-                topicPageWriters.Add(pageWriter);
-                GcPageWriter(topicPageWriters);
-            }
-
-        }
 
         public PageWriter TryGet(string topicId, MessagePageId pageId)
         {

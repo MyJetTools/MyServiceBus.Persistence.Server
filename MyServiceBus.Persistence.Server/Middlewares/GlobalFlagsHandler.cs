@@ -11,6 +11,7 @@ namespace MyServiceBus.Persistence.Server.Middlewares
         {
             ["/"] = "/",
             ["/api/status"] = "/api/status",
+            ["/logs"] = "/logs",
         };
 
         public static void UseGlobalFlagsHandler(this IApplicationBuilder app)

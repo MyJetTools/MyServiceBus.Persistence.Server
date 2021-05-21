@@ -18,6 +18,10 @@ namespace MyServiceBus.Persistence.Domains
     public class LogItem 
     {
         public DateTime DateTime { get; set; }
+        
+        public LogProcess LogProcess { get; set; }
+
+        public string Id { get; } = Guid.NewGuid().ToString("N");
         public string Context { get; set; }
         public string TopicId { get; set; }
         public string Message { get; set; }
@@ -53,6 +57,31 @@ namespace MyServiceBus.Persistence.Domains
             }
         }
 
+
+        private void InsertItem(LogItem newItem)
+        {
+            var logItems = _logItems[newItem.LogProcess];
+            logItems.Enqueue(newItem);
+            GcLogItems(logItems);
+
+            logItems = _logItems[LogProcess.All];
+            logItems.Enqueue(newItem);
+            GcLogItems(logItems);
+
+            if (newItem.TopicId != null)
+            {
+                    
+                if (!_logItemsByTopic.ContainsKey(newItem.TopicId))
+                    _logItemsByTopic.Add(newItem.TopicId, new Queue<LogItem>());
+
+                var logItemsByTopic = _logItemsByTopic[newItem.TopicId];
+                    
+                logItemsByTopic.Enqueue(newItem);
+                GcLogItems(logItemsByTopic);
+
+            }
+        }
+
         public void AddLog(LogProcess logProcess, string topicId, string context, string message, string stackTrace)
         {
             var newItem = new LogItem
@@ -61,42 +90,25 @@ namespace MyServiceBus.Persistence.Domains
                 Message = message,
                 DateTime = DateTime.UtcNow,
                 StackTrace = stackTrace,
-                TopicId = topicId
+                TopicId = topicId,
+                LogProcess = logProcess
             };
 
-            if (topicId == null)
-            {
-                Console.WriteLine(newItem.DateTime.ToString("s") + ": [" + context + "] " + message);    
-            }
-            else
-            {
-                Console.WriteLine(newItem.DateTime.ToString("s") + ": Topic: "+topicId+"; [" + context + "] " + message);
-            }
             
 
             lock (_logItems)
             {
-
-                var logItems = _logItems[logProcess];
-                logItems.Enqueue(newItem);
-                GcLogItems(logItems);
-
-                logItems = _logItems[LogProcess.All];
-                logItems.Enqueue(newItem);
-                GcLogItems(logItems);
-
-                if (topicId != null)
+                
+                if (topicId == null)
                 {
-                    
-                    if (!_logItemsByTopic.ContainsKey(topicId))
-                        _logItemsByTopic.Add(topicId, new Queue<LogItem>());
-
-                    var logItemsByTopic = _logItemsByTopic[topicId];
-                    
-                    logItemsByTopic.Enqueue(newItem);
-                    GcLogItems(logItemsByTopic);
-
+                    Console.WriteLine(newItem.DateTime.ToString("s") + ": [" + context + "] " + message);    
                 }
+                else
+                {
+                    Console.WriteLine(newItem.DateTime.ToString("s") + ": Topic: "+topicId+"; [" + context + "] " + message);
+                }
+                
+                InsertItem(newItem);
             }
 
         }
@@ -119,6 +131,40 @@ namespace MyServiceBus.Persistence.Domains
                 
                 return Array.Empty<LogItem>();
             }
+        }
+
+
+        public IReadOnlyList<LogItem> GetSnapshot()
+        {
+            var result = new Dictionary<string, LogItem>();
+
+            lock (_logItems)
+            {
+                foreach (var logItem in from logs in _logItems.Values from logItem in logs where !result.ContainsKey(logItem.Id) select logItem)
+                {
+                    result.Add(logItem.Id, logItem);
+                }
+                
+                foreach (var logItem in from logs in _logItemsByTopic.Values from logItem in logs where !result.ContainsKey(logItem.Id) select logItem)
+                {
+                    result.Add(logItem.Id, logItem);
+                }
+            }
+
+            return result.Values.OrderBy(itm => itm.DateTime).ToList();
+        }
+
+        public void Init(IEnumerable<LogItem> items)
+        {
+
+            lock (_logItems)
+            {
+                foreach (var item in items)
+                {
+                    InsertItem(item);
+                }
+            }
+            
         }
     }
 }

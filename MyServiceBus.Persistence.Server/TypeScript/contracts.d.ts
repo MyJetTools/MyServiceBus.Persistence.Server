@@ -3,6 +3,7 @@ interface ILoadedPage{
     topicId:string;
     writePosition:number;
     messageId:number;
+    savedMessageId:number;
     pages:number[];
     activePages:number[];
     queues: ITopicQueue[];

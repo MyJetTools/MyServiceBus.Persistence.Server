@@ -38,7 +38,7 @@ class HtmlRenderer
             
             let queuesContent = this.renderQueuesTableContent(page.queues);
             
-            result += '<tr><td>'+page.topicId+'<div>WritePos: '+page.writePosition+'</div></td><td>'+queuesContent+'</td><td>'+page.messageId+'</td><td><div>Active:</div>'+activePagesBadges+'<hr/><div>Loaded:</div>'+badges+'</td></tr>'
+            result += '<tr><td>'+page.topicId+'<div>WritePos: '+page.writePosition+'</div></td><td>'+queuesContent+'</td><td><div>Max:'+page.messageId+'</div><div>Saved:'+page.savedMessageId+'</div></td><td><div>Active:</div>'+activePagesBadges+'<hr/><div>Loaded:</div>'+badges+'</td></tr>'
         }
         
         return result;
@@ -82,9 +82,10 @@ class HtmlRenderer
         
         let leftPart = this.renderMainTable(r.loadedPages);
         
-        let rightPart = this.renderActiveOperations("Awaiting operations", r.awaitingOperations) +
+        let rightPart = 
             this.renderActiveOperations("Active operations", r.activeOperations)+
-            this.renderAdditionalFields(r);
+            this.renderAdditionalFields(r)+
+            this.renderActiveOperations("Awaiting operations", r.awaitingOperations);
         
         return this.splitPage(leftPart, rightPart);
         

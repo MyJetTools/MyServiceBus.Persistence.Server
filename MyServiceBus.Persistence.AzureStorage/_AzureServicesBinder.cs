@@ -1,11 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.WindowsAzure.Storage;
+using MyAzureBlob;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.AzureStorage.CompressedMessages;
 using MyServiceBus.Persistence.AzureStorage.IndexByMinute;
 using MyServiceBus.Persistence.AzureStorage.QueueSnapshot;
 using MyServiceBus.Persistence.AzureStorage.TopicMessages;
-using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
@@ -18,6 +18,9 @@ namespace MyServiceBus.Persistence.AzureStorage
 
         public static void BindTopicsPersistentStorage(this IServiceCollection sc, CloudStorageAccount cloudStorageAccount)
         {
+            var blob = new MyAzureBlobContainer(cloudStorageAccount, "system");
+            sc.AddSingleton(new LogsSnapshotRepository(blob));
+            
             sc.AddSingleton<ITopicsAndQueuesSnapshotStorage>(new TopicsAndQueuesSnapshotStorage(
                 new MyAzurePageBlob(cloudStorageAccount, "topics", "topicsdata")));
         }
@@ -27,6 +30,8 @@ namespace MyServiceBus.Persistence.AzureStorage
 
         public static void BindMessagesPersistentStorage(this IServiceCollection sc, CloudStorageAccount cloudStorageAccount)
         {
+
+            
             sc.AddSingleton<IMessagesContentPersistentStorage>(new MessagesPersistentStorage(parameters =>
             {
                 var fileName = parameters.pageId.Value.ToString(FileMask);

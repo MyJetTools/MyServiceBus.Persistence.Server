@@ -2,12 +2,14 @@ using System;
 using System.Threading.Tasks;
 using DotNetCoreDecorators;
 using Microsoft.Extensions.DependencyInjection;
+using MyServiceBus.Persistence.AzureStorage;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
 using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
+using MyServiceBus.Persistence.Domains.Metrics;
 using MyServiceBus.Persistence.Domains.TopicsAndQueues;
 using MyServiceBus.Persistence.Server.Services;
 
@@ -25,6 +27,9 @@ namespace MyServiceBus.Persistence.Server
         private static ActivePagesWarmerAndGc _activePagesWarmerAndGc;
 
         public static PersistentOperationsScheduler PersistentOperationsScheduler { get; private set; }
+        
+        
+        public static MaxPersistedMessageIdByTopic MaxPersistedMessageIdByTopic { get; private set; }
 
 
         public static MessagesContentReader MessagesContentReader { get; private set; }
@@ -35,6 +40,8 @@ namespace MyServiceBus.Persistence.Server
         private static IServiceProvider _serviceProvider;
 
         public static IAppLogger AppLogger { get; private set; }
+        
+        public static LogsSnapshotRepository LogsSnapshotRepository { get; private set; }
 
         public static CompressedMessagesUtils CompressedMessagesUtils { get; private set; }
         
@@ -62,6 +69,12 @@ namespace MyServiceBus.Persistence.Server
 
         public static void Init(IServiceProvider sp, SettingsModel settingsModel)
         {
+            AppLogger = sp.GetRequiredService<IAppLogger>();
+            LogsSnapshotRepository = sp.GetRequiredService<LogsSnapshotRepository>();
+
+            var items = LogsSnapshotRepository.LoadAsync().AsTask().Result;
+            
+            ((AppLogger)AppLogger).Init(items);
 
             var queuesTimeSpan = TimeSpan.Parse(settingsModel.FlushQueuesSnapshotFreq);
             _taskTimerSyncQueues = new TaskTimer(queuesTimeSpan);  
@@ -98,8 +111,11 @@ namespace MyServiceBus.Persistence.Server
             LastCompressedPageStorage = sp.GetRequiredService<ILastCompressedPageStorage>();
 
             IndexByMinuteWriter = sp.GetRequiredService<IndexByMinuteWriter>();
+            
+            
+            MaxPersistedMessageIdByTopic = sp.GetRequiredService<MaxPersistedMessageIdByTopic>();;
 
-            AppLogger = sp.GetRequiredService<IAppLogger>();
+
 
             Task.Run(() => InitTopicsAsync(sp));
 

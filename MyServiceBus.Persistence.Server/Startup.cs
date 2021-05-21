@@ -42,6 +42,16 @@ namespace MyServiceBus.Persistence.Server
             applicationLifetime.ApplicationStopping.Register(() =>
             {
                 ServiceLocator.StopAsync().Wait();
+
+
+                foreach (var (topic, messageId) in ServiceLocator.MaxPersistedMessageIdByTopic.GetSnapshot())
+                {
+                   ServiceLocator.AppLogger.AddLog(LogProcess.System, topic, "Last Save message before shutdown", messageId.ToString());
+                }
+                
+                var snapshot = ((AppLogger)ServiceLocator.AppLogger).GetSnapshot();
+                ServiceLocator.LogsSnapshotRepository.SaveAsync(snapshot).AsTask().Wait();
+                
             });
 
 

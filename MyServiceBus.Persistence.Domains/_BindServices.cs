@@ -4,6 +4,7 @@ using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
+using MyServiceBus.Persistence.Domains.Metrics;
 using MyServiceBus.Persistence.Domains.TopicsAndQueues;
 
 namespace MyServiceBus.Persistence.Domains
@@ -31,6 +32,8 @@ namespace MyServiceBus.Persistence.Domains
             sr.AddSingleton<IndexByMinuteWriter>();
             
             sr.AddSingleton<PagesToCompressDetector>();
+
+            sr.AddSingleton<MaxPersistedMessageIdByTopic>();
         }
         
     }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
+using MyServiceBus.Persistence.Domains.Metrics;
 using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
@@ -17,6 +18,8 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 
 
         private readonly long _min;
+
+        private MaxPersistedMessageIdByTopic _maxPersistedMessageIdByTopic;
 
         public AppendPageDataPersistentOperation(string topicId, MessagePageId pageId, string reason, IEnumerable<MessageContentGrpcModel> messages) 
             : base(topicId, pageId, reason)
@@ -39,6 +42,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             _messagesContentPersistentStorage = serviceProvider.GetRequiredService<IMessagesContentPersistentStorage>();
             _messagesContentCache = serviceProvider.GetRequiredService<MessagesContentCache>();
             _globalFlags = serviceProvider.GetRequiredService<AppGlobalFlags>();
+            _maxPersistedMessageIdByTopic = serviceProvider.GetRequiredService<MaxPersistedMessageIdByTopic>();
         }
 
 
@@ -69,6 +73,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
                 await pageWriter.WaitUntilInitializedAsync();
             
             await pageWriter.WriteAsync(_messagesToPersist.Values);
+            _maxPersistedMessageIdByTopic.Update(TopicId, _messagesToPersist.Values);
             return _messagesContentCache.TryGetPage(TopicId, PageId);
         }
 
