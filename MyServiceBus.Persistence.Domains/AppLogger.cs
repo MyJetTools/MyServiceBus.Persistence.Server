@@ -64,7 +64,15 @@ namespace MyServiceBus.Persistence.Domains
                 TopicId = topicId
             };
 
-            Console.WriteLine(newItem.DateTime.ToString("s") + ": [" + context + "] " + message);
+            if (topicId == null)
+            {
+                Console.WriteLine(newItem.DateTime.ToString("s") + ": [" + context + "] " + message);    
+            }
+            else
+            {
+                Console.WriteLine(newItem.DateTime.ToString("s") + ": Topic: "+topicId+"; [" + context + "] " + message);
+            }
+            
 
             lock (_logItems)
             {
