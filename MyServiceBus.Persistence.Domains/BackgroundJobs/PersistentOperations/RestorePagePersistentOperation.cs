@@ -47,17 +47,20 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 
             var dt = DateTime.UtcNow;
 
-            if (pageCompressedContent.Content.Length == 0)
+            if (pageCompressedContent.ZippedContent.Length == 0)
             {
                 _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,"Page: "+PageId, 
                     $"Can not restore page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}");
+                
+    
                 return null;
             }
-            
+
+            var msgs = pageCompressedContent.Messages;
             _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,"Page: "+PageId, 
-                $"Restored page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}");
+                $"Restored page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}. Messages: {msgs.Count}");
             
-            return pageCompressedContent.Content.Length == 0 
+            return pageCompressedContent.ZippedContent.Length == 0 
                 ? null 
                 : RestoreCompressedPage(pageCompressedContent);
         }
@@ -69,14 +72,18 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             var dt = DateTime.UtcNow;
             var pageWriter = await _messagesContentPersistentStorage.TryGetPageWriterAsync(TopicId, PageId);
 
+
+            var messagesCount = 0;
             if (pageWriter == null)
             {
                 var page = _messagesContentCache.GetOrCreateWritablePage(TopicId, PageId);
                 pageWriter = await _messagesContentPersistentStorage.CreatePageWriterAsync(TopicId, PageId, false, page, _globalFlags);
+
+                messagesCount = page.Count;
             }
 
             _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,"Page: "+PageId, 
-                $"Restored page #{PageId} from UnCompressed source. Duration: {DateTime.UtcNow - dt}");
+                $"Restored page #{PageId} from UnCompressed source. Duration: {DateTime.UtcNow - dt}. Messages: "+messagesCount);
             
             return pageWriter?.GetAssignedPage();
         }

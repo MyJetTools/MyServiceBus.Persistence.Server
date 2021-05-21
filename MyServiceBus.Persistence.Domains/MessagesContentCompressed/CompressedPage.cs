@@ -10,33 +10,42 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
 {
     public struct CompressedPage
     {
-        public CompressedPage(ReadOnlyMemory<byte> content)
+        public CompressedPage(ReadOnlyMemory<byte> zippedContent)
         {
-            Content = content;
+            ZippedContent = zippedContent;
+
+            if (zippedContent.IsEmpty)
+            {
+                Messages = Array.Empty<MessageContentGrpcModel>();
+            }
+            else
+            {
+                var unzippedMemory = ZippedContent.Unzip();
+                Messages = ProtoBuf.Serializer.Deserialize<List<MessageContentGrpcModel>>(unzippedMemory);   
+            }
+            
+
         }
 
         public CompressedPage(IReadOnlyList<MessageContentGrpcModel> page)
         {
+            Messages = page;
             var stream = new MemoryStream();
             ProtoBuf.Serializer.Serialize(stream, page);
-            
             stream.Position = 0;
-            
-            Content = stream.Zip();
+            ZippedContent = stream.Zip();
         }
 
-        public ReadOnlyMemory<byte> Content { get; private set; }
+        public ReadOnlyMemory<byte> ZippedContent { get; private set; }
 
         public void EmptyIt()
         {
-            Content = null;
+            ZippedContent = null;
+            Messages = Array.Empty<MessageContentGrpcModel>();
         }
+        
+        public IReadOnlyList<MessageContentGrpcModel> Messages { get; private set; }
 
-        public IReadOnlyList<MessageContentGrpcModel> UnCompress()
-        {
-            var unzippedMemory = Content.Unzip();
-            return ProtoBuf.Serializer.Deserialize<List<MessageContentGrpcModel>>(unzippedMemory);
-        }
 
         public static CompressedPage CreateEmpty()
         {
@@ -45,11 +54,10 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
 
         public ReadOnlyContentPage ToContentPage(MessagePageId pageId)
         {
-            return Content.IsEmpty 
+            return ZippedContent.IsEmpty 
                 ? null 
                 : new ReadOnlyContentPage(pageId, this);
         }
-        
     }
 
 

@@ -20,7 +20,7 @@ namespace MyServiceBus.Persistence.Server.Grpc
 
             if (page != null)
             {
-                foreach (var batch in page.GetCompressedPage().Content.BatchIt(1024*1024*3))
+                foreach (var batch in page.GetCompressedPage().ZippedContent.BatchIt(1024*1024*3))
                     yield return batch.ToArray();
             }
         }

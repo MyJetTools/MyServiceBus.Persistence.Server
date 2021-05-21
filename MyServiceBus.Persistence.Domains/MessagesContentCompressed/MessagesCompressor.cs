@@ -20,6 +20,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
         }
 
         private const string ZipEntryName = "d";
+        
 
         public static ReadOnlyMemory<byte> Zip(this MemoryStream sourceStream)
         {

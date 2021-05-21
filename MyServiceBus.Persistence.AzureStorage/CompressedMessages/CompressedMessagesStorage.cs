@@ -53,8 +53,6 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
                     result.Append(r);
                 }
 
-                return result.ToString();
-
             }
 
             return result.ToString();
@@ -64,9 +62,9 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
         {
             var md5 = new MD5CryptoServiceProvider();
 
-            var hash = md5.ComputeHash(pageData.Content.ToArray());
+            var hash = md5.ComputeHash(pageData.ZippedContent.ToArray());
             
-            appLogger.AddLog(LogProcess.PagesCompressor, topicId,"PageId: "+pageId.Value, $"Compressed page size is: {pageData.Content.Length}. MD5: "+ToHex(hash));
+            appLogger.AddLog(LogProcess.PagesCompressor, topicId,"PageId: "+pageId.Value, $"Compressed page size is: {pageData.ZippedContent.Length}. MD5: "+ToHex(hash));
             var pagesCluster = GetPagesCluster(topicId, pageId);
             await pagesCluster.WriteAsync(pageId, pageData);
         }

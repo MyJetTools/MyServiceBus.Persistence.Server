@@ -46,7 +46,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, "Page: "+PageId, $"Verifying compressed data for page {PageId}");
             var compressedPageToVerify = await _compressedMessagesStorage.GetCompressedPageAsync(TopicId, PageId);
 
-            var messages = compressedPageToVerify.UnCompress();
+            var messages = compressedPageToVerify.Messages;
 
             _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, "Page: "+PageId, $"Verified compressed data for page {PageId}. Messages: " + messages.Count);
             

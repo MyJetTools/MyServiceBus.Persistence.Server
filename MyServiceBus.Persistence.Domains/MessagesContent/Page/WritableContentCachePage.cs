@@ -55,7 +55,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             _readerWriterLockSlim.EnterReadLock();
             try
             {
-                if (_compressedSnapshot.Content.Length > 0)
+                if (_compressedSnapshot.ZippedContent.Length > 0)
                     return _compressedSnapshot;
 
                 var list = GetMessagesAsList();
@@ -105,7 +105,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         public static WritableContentCachePage Create(ReaderWriterLockSlim readerWriterLockSlim, IMessageContentPage messageContent)
         {
             
-            var messages = messageContent.GetCompressedPage().UnCompress();
+            var messages = messageContent.GetCompressedPage().Messages;
 
             return new WritableContentCachePage(readerWriterLockSlim, messageContent.PageId, messages)
             {

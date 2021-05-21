@@ -18,7 +18,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         public IReadOnlyList<MessageContentGrpcModel> GetMessages()
         {
-            return _compressedPage.UnCompress();
+            return _compressedPage.Messages;
         }
         
         public MessagePageId PageId { get; }
@@ -66,7 +66,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
             try
             {
-                messages.Init(_compressedPage.UnCompress());
+                messages.Init(_compressedPage.Messages);
             }
             catch (Exception)
             {

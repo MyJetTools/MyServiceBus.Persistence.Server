@@ -185,14 +185,14 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
             if (_tocPage == null)
                 await InitIndexPageAsync(true);
 
-            var nextPageNoToWrite = await GetNextPageNoToWriteAsync(tocIndex, pageData.Content.Length);
+            var nextPageNoToWrite = await GetNextPageNoToWriteAsync(tocIndex, pageData.ZippedContent.Length);
 
-            await AzurePageBlob.WriteBytesAsync(pageData.Content, nextPageNoToWrite, new WriteBytesOptions
+            await AzurePageBlob.WriteBytesAsync(pageData.ZippedContent, nextPageNoToWrite, new WriteBytesOptions
             {
                 SplitRoundTripsPageSize = 4096
             });
             
-            await WritePagePositionAllocationToc(tocIndex, nextPageNoToWrite, pageData.Content.Length);
+            await WritePagePositionAllocationToc(tocIndex, nextPageNoToWrite, pageData.ZippedContent.Length);
         }
 
         public async Task<CompressedPage> ReadAsync(MessagePageId pageId)

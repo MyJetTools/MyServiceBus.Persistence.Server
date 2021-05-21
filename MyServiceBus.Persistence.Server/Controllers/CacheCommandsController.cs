@@ -73,7 +73,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
             var pageId = MessagesContentPagesUtils.GetPageId(messageId);
             var compressedPage = await ServiceLocator.LegacyCompressedMessagesStorage.GetCompressedPageAsync(topicId, pageId);
             
-            if (compressedPage.Content.IsEmpty)
+            if (compressedPage.ZippedContent.IsEmpty)
                 return new MessageContentModel
                 {
                     Id = -1,
@@ -110,7 +110,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 Console.WriteLine("Reading: "+topicId+"/"+pageId.Value);
                 var pageData = await ServiceLocator.LegacyCompressedMessagesStorage.GetCompressedPageAsync(topicId, pageId);
                 
-                if (!pageData.Content.IsEmpty)
+                if (!pageData.ZippedContent.IsEmpty)
                 {
                     Console.WriteLine("Writing: "+topicId+"/"+pageId.Value);
                     await ServiceLocator.CompressedMessagesStorage.WriteCompressedPageAsync(topicId, pageId, pageData, ServiceLocator.AppLogger);

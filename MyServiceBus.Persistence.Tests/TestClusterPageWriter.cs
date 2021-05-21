@@ -23,7 +23,7 @@ namespace MyServiceBus.Persistence.Tests
             
             var resultContent = await clusterPage.ReadAsync(messagePageId);
             
-            resultContent.Content.AssertAllBytesAreEqualWith(content.Content);
+            resultContent.ZippedContent.AssertAllBytesAreEqualWith(content.ZippedContent);
         }
 
 
@@ -32,7 +32,7 @@ namespace MyServiceBus.Persistence.Tests
             var messagePageId = new MessagePageId(pageId);
             var content = new CompressedPage(new [] {(byte)pageId, (byte)pageId, (byte)pageId});
             var resultContent = await clusterPage.ReadAsync(messagePageId);
-            resultContent.Content.AssertAllBytesAreEqualWith(content.Content);
+            resultContent.ZippedContent.AssertAllBytesAreEqualWith(content.ZippedContent);
         }
 
 
