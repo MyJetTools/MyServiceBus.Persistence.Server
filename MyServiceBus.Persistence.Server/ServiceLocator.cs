@@ -114,7 +114,19 @@ namespace MyServiceBus.Persistence.Server
                 return new ValueTask();
             });
 
+            _taskTimerSyncQueues.RegisterExceptionHandler((timer, e) =>
+            {
+                AppLogger.AddLog(LogProcess.System, timer, e.Message, e.StackTrace);
+                return new ValueTask();
+            });
+            
             _taskTimerSyncMessages.Register("PersistentOperationsScheduler", PersistentOperationsScheduler.ExecuteOperationAsync);
+            
+            _taskTimerSyncMessages.RegisterExceptionHandler((timer, e) =>
+            {
+                AppLogger.AddLog(LogProcess.System, timer, e.Message, e.StackTrace);
+                return new ValueTask();
+            });
         }
 
 
