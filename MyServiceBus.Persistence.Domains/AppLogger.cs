@@ -1,6 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MyServiceBus.Persistence.Domains
 {
@@ -9,13 +9,14 @@ namespace MyServiceBus.Persistence.Domains
     public interface IAppLogger
     {
         void AddLog(string context, string message, string stackTrace = null);
+
+        IReadOnlyList<LogItem> Get();
     }
     
 
 
     public class LogItem
     {
-        public string Id { get; set; }
         public DateTime DateTime { get; set; }
         public string Context { get; set; }
         public string Message { get; set; }
@@ -26,44 +27,44 @@ namespace MyServiceBus.Persistence.Domains
     public class AppLogger : IAppLogger
     {
 
-        private readonly Dictionary<string, List<LogItem>> _logItems = new Dictionary<string, List<LogItem>>();
+        private readonly Queue<LogItem> _logItems = new ();
 
-        private static void GcLogItems(IList logItems)
+        private void GcLogItems()
         {
-            while (logItems.Count > 100)
+            while (_logItems.Count > 100)
             {
-                logItems.RemoveAt(0);
+                _logItems.Dequeue();
             }
         }
 
         public void AddLog(string context, string message, string stackTrace)
         {
-            
-            
+
+
             var newItem = new LogItem
             {
                 Context = context,
-                Id = Guid.NewGuid().ToString("N"),
                 Message = message,
                 DateTime = DateTime.UtcNow,
                 StackTrace = stackTrace
             };
-            
-                Console.WriteLine(newItem.DateTime.ToString("s")+": ["+context+"] "+message);
-            
-            
+
+            Console.WriteLine(newItem.DateTime.ToString("s") + ": [" + context + "] " + message);
+
             lock (_logItems)
             {
-                if (!_logItems.ContainsKey(context))
-                    _logItems.Add(context, new List<LogItem>());
-
-                var logItems = _logItems[context];
-                logItems.Add(newItem);
-
-                GcLogItems(logItems);
-
+                _logItems.Enqueue(newItem);
+                GcLogItems();
             }
-            
+
+        }
+
+        public IReadOnlyList<LogItem> Get()
+        {
+            lock (_logItems)
+            {
+                return _logItems.ToList();
+            }
         }
         
     }
