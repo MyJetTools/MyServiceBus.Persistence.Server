@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.Domains.MessagesContent;
@@ -58,8 +59,17 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             }
 
             var msgs = pageCompressedContent.Messages;
+            long minId = 0;
+            long maxId = 0;
+
+            if (msgs.Count > 0)
+            {
+                minId = msgs.Min(itm => itm.MessageId);
+                maxId = msgs.Max(itm => itm.MessageId);
+            }
+            
             _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, LogContext, 
-                $"Restored page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}. Messages: {msgs.Count}");
+                $"Restored page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}. Messages: {msgs.Count}. MinId: {minId}, MaxId: {maxId}");
 
             return pageCompressedContent.ZippedContent.Length == 0
                 ? null
