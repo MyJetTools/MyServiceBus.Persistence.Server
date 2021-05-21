@@ -57,19 +57,16 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         
         private readonly IAzurePageBlob _azurePageBlob;
         private readonly int _pagesReadingAmount;
-        private readonly MaxPersistedMessageIdByTopic _maxPersistedMessageIdByTopic;
         private BinaryPackagesSequenceBuilder _binaryPackagesSequenceBuilder;
 
         public string TopicId { get; }
         
         public MessagePageId PageId { get; }
 
-        public PageWriter(string topicId, MessagePageId pageId, IAzurePageBlob azurePageBlob, int pagesReadingAmount, 
-            MaxPersistedMessageIdByTopic maxPersistedMessageIdByTopic)
+        public PageWriter(string topicId, MessagePageId pageId, IAzurePageBlob azurePageBlob, int pagesReadingAmount)
         {
             _azurePageBlob = azurePageBlob;
             _pagesReadingAmount = pagesReadingAmount;
-            _maxPersistedMessageIdByTopic = maxPersistedMessageIdByTopic;
             TopicId = topicId;
             PageId = pageId;
         }
@@ -113,7 +110,6 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             if (result.Count > 0)
                 await _binaryPackagesSequenceBuilder.AppendAsync(result);
             
-            _maxPersistedMessageIdByTopic.Update(TopicId, newMessages);
             
             LastAccessTime = DateTime.UtcNow;
 

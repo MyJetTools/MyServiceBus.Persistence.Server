@@ -22,7 +22,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         
         ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId);
 
-        Task SyncAsync(string topicId);
+        Task<long> SyncAsync(string topicId);
 
         Task GcAsync(string topicId, MessagePageId pageId);
     }

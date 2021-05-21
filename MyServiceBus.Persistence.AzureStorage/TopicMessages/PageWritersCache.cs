@@ -2,12 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AsyncUtilities;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
-using ValueTask = AsyncUtilities.ValueTask;
 
 namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 {
@@ -23,7 +21,8 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
 
         private readonly string _topicId;
-        public PageWritersCache(string topicId, Func<(string topicId, MessagePageId pageId),IAzurePageBlob> getMessagesBlob, AppGlobalFlags appGlobalFlags)
+        public PageWritersCache(string topicId, Func<(string topicId, MessagePageId pageId),IAzurePageBlob> getMessagesBlob, 
+            AppGlobalFlags appGlobalFlags)
         {
             _topicId = topicId;
             _getMessagesBlob = getMessagesBlob;
@@ -52,7 +51,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             if (await writer.BlobExistsAsync())
                 await writer.AssignPageAndInitialize(new WritableContentCachePage(pageId), _appGlobalFlags);
             else
-                await writer.CreateAndAssignAsync(new WritableContentCachePage(pageId));
+                await writer.CreateAndAssignAsync(new WritableContentCachePage(pageId), _appGlobalFlags);
             
             _pageWriters.Add(pageId.Value, writer);
 
@@ -61,7 +60,6 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         
         public async ValueTask<PageWriter> TryGetAsync(MessagePageId pageId, Func<WritableContentCachePage> createCachePage)
         {
-
             var writer = TryGet(pageId);
 
             if (writer != null)

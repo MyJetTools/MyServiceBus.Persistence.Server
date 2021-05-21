@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.MessagesContent;
+using MyServiceBus.Persistence.Domains.Metrics;
 
 namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 {
@@ -85,14 +86,24 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
 
-        public async Task SyncAsync(string topicId)
+        public async Task<long> SyncAsync(string topicId)
         {
             var pagesToSync = GetPageWriterReadyToSync(topicId);
-
+            
             if (pagesToSync == null)
-                return;
+                return -1;
+            
+            long result = -1;
+            
             foreach (var pageWriter in pagesToSync)
-                await pageWriter.SyncIfNeededAsync();
+            {
+               await pageWriter.SyncIfNeededAsync();
+               
+               if (result<pageWriter.MaxMessageIdInBlob)
+                    result = pageWriter.MaxMessageIdInBlob;
+            }
+
+            return result;
         }
 
 
