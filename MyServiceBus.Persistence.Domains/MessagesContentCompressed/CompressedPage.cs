@@ -19,7 +19,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
         {
             var stream = new MemoryStream();
             ProtoBuf.Serializer.Serialize(stream, page);
+            
             stream.Position = 0;
+            
             Content = stream.Zip();
         }
 

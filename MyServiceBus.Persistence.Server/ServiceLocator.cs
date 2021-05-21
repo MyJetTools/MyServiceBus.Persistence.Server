@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using DotNetCoreDecorators;
 using Microsoft.Extensions.DependencyInjection;
+using MyServiceBus.Persistence.AzureStorage;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
 using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
@@ -100,6 +101,8 @@ namespace MyServiceBus.Persistence.Server
             IndexByMinuteWriter = sp.GetRequiredService<IndexByMinuteWriter>();
 
             AppLogger = sp.GetRequiredService<IAppLogger>();
+
+            AzureServicesBinder.AppLogger = AppLogger;
 
             Task.Run(() => InitTopicsAsync(sp));
 

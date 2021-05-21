@@ -5,6 +5,7 @@ using MyServiceBus.Persistence.AzureStorage.CompressedMessages;
 using MyServiceBus.Persistence.AzureStorage.IndexByMinute;
 using MyServiceBus.Persistence.AzureStorage.QueueSnapshot;
 using MyServiceBus.Persistence.AzureStorage.TopicMessages;
+using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
@@ -23,6 +24,8 @@ namespace MyServiceBus.Persistence.AzureStorage
         
         private const string FileMask = "0000000000000000000";
 
+        public static IAppLogger AppLogger;
+
         public static void BindMessagesPersistentStorage(this IServiceCollection sc, CloudStorageAccount cloudStorageAccount)
         {
             sc.AddSingleton<IMessagesContentPersistentStorage>(new MessagesPersistentStorage(parameters =>
@@ -35,7 +38,7 @@ namespace MyServiceBus.Persistence.AzureStorage
             {
                 var fileName = "cluster-"+parameters.pageCluserId.Value.ToString(FileMask)+".zip";
                 return new MyAzurePageBlob(cloudStorageAccount, parameters.topicId, fileName);
-            }));
+            }, AppLogger));
             
             sc.AddSingleton<ILegacyCompressedMessagesStorage>(new LegacyCompressedMessagesStorage(parameters =>
             {
