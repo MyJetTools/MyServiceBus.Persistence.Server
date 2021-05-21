@@ -10,6 +10,9 @@ namespace MyServiceBus.Persistence.Server.Grpc
         public ValueTask SaveSnapshotAsync(SaveQueueSnapshotGrpcRequest request)
         {
 
+            if (!ServiceLocator.AppGlobalFlags.Initialized)
+                throw new Exception("App is not initialized yet");
+            
             if (ServiceLocator.AppGlobalFlags.IsShuttingDown)
                 throw new Exception("App is stopping");
 
