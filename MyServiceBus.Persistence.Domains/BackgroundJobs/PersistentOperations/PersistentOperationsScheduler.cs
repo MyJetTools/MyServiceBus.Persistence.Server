@@ -68,9 +68,9 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             EnqueueOperation(operation, EnqueueOption.Normal);
         }
 
-        public Task<IMessageContentPage> RestorePageAsync(string topicId, MessagePageId pageId, string reason)
+        public Task<IMessageContentPage> RestorePageAsync(string topicId, bool nonCompressedOnly, MessagePageId pageId, string reason)
         {
-            var operation = new RestorePagePersistentOperation(topicId, pageId, reason);
+            var operation = new RestorePagePersistentOperation(topicId, pageId, nonCompressedOnly, reason);
             EnqueueOperation(operation, EnqueueOption.Asap);
             return operation.GetCurrentTask();
         }

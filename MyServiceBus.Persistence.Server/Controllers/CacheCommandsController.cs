@@ -80,7 +80,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 };
 
 
-            var page = compressedPage.ToContentPage(pageId);
+            var page = compressedPage.ToReadOnlyContentPage();
 
             var message = page.TryGet(messageId);
 

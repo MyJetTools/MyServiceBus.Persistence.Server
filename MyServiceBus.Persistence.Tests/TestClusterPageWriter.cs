@@ -28,7 +28,7 @@ namespace MyServiceBus.Persistence.Tests
 
             };
             
-            var content = new CompressedPage(new []{msg});
+            var content = new CompressedPage(new MessagePageId(pageId), new []{msg});
             
             cache.Add(pageId, content.ZippedContent.ToArray());
             

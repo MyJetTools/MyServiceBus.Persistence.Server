@@ -31,7 +31,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
 
             return page != null 
                 ? new ValueTask<IMessageContentPage>(page) 
-                : new ValueTask<IMessageContentPage>(_persistentOperationsScheduler.RestorePageAsync(topicId, pageId, reason));
+                : new ValueTask<IMessageContentPage>(_persistentOperationsScheduler.RestorePageAsync(topicId, false, pageId, reason));
         }
 
         public async Task<(MessageContentGrpcModel message, IMessageContentPage page)> TryGetMessageAsync(string topicId, long messageId, string reason)

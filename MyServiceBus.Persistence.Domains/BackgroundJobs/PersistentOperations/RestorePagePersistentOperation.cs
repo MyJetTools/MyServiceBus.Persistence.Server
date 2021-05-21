@@ -9,9 +9,12 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 {
     public class RestorePagePersistentOperation : PersistentOperationBase
     {
-        public RestorePagePersistentOperation(string topicId, MessagePageId pageId, string reason) 
+        private readonly bool _restoreAsNonCompressedOnly;
+
+        public RestorePagePersistentOperation(string topicId, MessagePageId pageId, bool restoreAsNonCompressedOnly, string reason) 
             : base(topicId, pageId, reason)
         {
+            _restoreAsNonCompressedOnly = restoreAsNonCompressedOnly;
         }
 
         public override void Inject(IServiceProvider serviceProvider)
@@ -33,12 +36,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 
         private AppGlobalFlags _globalFlags;
         
-        private IMessageContentPage RestoreCompressedPage( CompressedPage pageCompressedContent)
-        {
-            var restoredPage = new ReadOnlyContentPage(PageId, pageCompressedContent);
-            return _messagesContentCache.AddPage(TopicId, restoredPage);
-        }
-
+      
 
         private string LogContext => "Page: " + PageId + "; Reason:" + Reason;
         
@@ -62,10 +60,10 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             var msgs = pageCompressedContent.Messages;
             _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, LogContext, 
                 $"Restored page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}. Messages: {msgs.Count}");
-            
-            return pageCompressedContent.ZippedContent.Length == 0 
-                ? null 
-                : RestoreCompressedPage(pageCompressedContent);
+
+            return pageCompressedContent.ZippedContent.Length == 0
+                ? null
+                : new ReadOnlyContentPage(pageCompressedContent);
         }
         
         private async Task<IMessageContentPage> TryRestoreUncompressedPage()
@@ -107,6 +105,9 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 
             if (page != null)
                 return page;
+
+            if (_restoreAsNonCompressedOnly)
+                return await TryRestoreUncompressedPage();
 
             return await TryReadPageAsync();
         }

@@ -58,15 +58,16 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
             return result.ToString();
         }
 
-        public async Task WriteCompressedPageAsync(string topicId, MessagePageId pageId, CompressedPage pageData, IAppLogger appLogger)
+        public async Task WriteCompressedPageAsync(string topicId, MessagePageId pageId, CompressedPage compressedPage, IAppLogger appLogger)
         {
             var md5 = new MD5CryptoServiceProvider();
 
-            var hash = md5.ComputeHash(pageData.ZippedContent.ToArray());
+            var zippedContent = compressedPage.ZippedContent.ToArray();
+            var hash = md5.ComputeHash(zippedContent);
             
-            appLogger.AddLog(LogProcess.PagesCompressor, topicId,"PageId: "+pageId.Value, $"Compressed page size is: {pageData.ZippedContent.Length}. MD5: "+ToHex(hash));
+            appLogger.AddLog(LogProcess.PagesCompressor, topicId,"PageId: "+pageId.Value, $"Compressed page size is: {zippedContent.Length}. MD5: "+ToHex(hash));
             var pagesCluster = GetPagesCluster(topicId, pageId);
-            await pagesCluster.WriteAsync(pageId, pageData);
+            await pagesCluster.WriteAsync(pageId, compressedPage);
         }
 
         public Task<CompressedPage> GetCompressedPageAsync(string topicId, MessagePageId pageId)

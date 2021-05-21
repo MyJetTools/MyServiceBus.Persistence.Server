@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.Domains.MessagesContent;
@@ -60,7 +59,7 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
         public async Task<CompressedPage> GetCompressedPageAsync(string topicId, MessagePageId pageId)
         {
             var result = await DownloadCompressedPageAsync(topicId, pageId);
-            return new CompressedPage(result);
+            return new CompressedPage(pageId, result);
         }
 
         public async ValueTask<bool> HasCompressedPageAsync(string topicId, MessagePageId pageId)

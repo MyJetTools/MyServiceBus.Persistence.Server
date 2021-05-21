@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 using MyServiceBus.Persistence.Grpc;
 
@@ -23,19 +24,21 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         
         public MessagePageId PageId { get; }
 
-        public ReadOnlyContentPage(MessagePageId pageId, CompressedPage compressedPage)
+
+        public ReadOnlyContentPage(CompressedPage compressedPage)
         {
-            PageId = pageId;
+            PageId = compressedPage.PageId;
             _compressedPage = compressedPage;
             LastAccessTime = DateTime.UtcNow;
-            InitMessages();
         }
 
-        public ReadOnlyContentPage(IMessageContentPage page):this(page.PageId, page.GetCompressedPage())
+
+        public ReadOnlyContentPage(IMessageContentPage page)
         {
-        
+            PageId = page.PageId;
+            LastAccessTime = DateTime.UtcNow;
+            _compressedPage = new CompressedPage(page.PageId, page.GetMessages());
         }
-
 
         public void FilterOnlyMessagesBelongsToThePage()
         {
@@ -53,57 +56,41 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             }
 
 
-            _compressedPage = new CompressedPage(result.GetMessagesAsList()); 
+            _compressedPage = new CompressedPage(PageId, result.GetMessagesAsList()); 
             _messages = result;
-        }
-        
-        public void InitMessages()
-        {
-            if (_messages != null)
-                return;
-            
-            var messages = new MessagesContentDictionary();
-
-            try
-            {
-                messages.Init(_compressedPage.Messages);
-            }
-            catch (Exception)
-            {
-                _compressedPage = new CompressedPage(messages.GetMessagesAsList());
-                Console.WriteLine("Can not Unzip Archive for the page: "+PageId);
-            }
-            
-            _messages = messages;
         }
 
 
         public void MergeWith(IMessageContentPage messageContentPage)
         {
 
-            if (messageContentPage == null)
-                return;
-            
-            if (_messages == null)
-                InitMessages();
+            var mergedMessages = new Dictionary<long, MessageContentGrpcModel>();
 
-            var result = _messages.Clone();
 
-            foreach (var grpcModel in messageContentPage.GetMessages())
+            foreach (var message in _compressedPage.Messages)
             {
-                result.AddOrUpdate(grpcModel);
+                if (!mergedMessages.ContainsKey(message.MessageId))
+                    mergedMessages.Add(message.MessageId, message);
             }
 
-            _compressedPage = new CompressedPage(result.GetMessagesAsList()); 
-            _messages = result;
+            foreach (var message in messageContentPage.GetMessages())
+            {
+                if (mergedMessages.ContainsKey(message.MessageId))
+                    mergedMessages[message.MessageId] = message;
+                else
+                    mergedMessages.Add(message.MessageId, message);
+            }
+
+  
+
+            _compressedPage = new CompressedPage(PageId, mergedMessages.Values.ToList()); 
         }
 
 
         public MessageContentGrpcModel TryGet(long messageId)
         {
             LastAccessTime = DateTime.UtcNow;
-            if (_messages == null)
-                InitMessages();
+   
 
             return _messages.TryGetOrNull(messageId);
         }

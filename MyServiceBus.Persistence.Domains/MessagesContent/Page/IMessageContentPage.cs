@@ -10,7 +10,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         
         MessagePageId PageId { get; }
         MessageContentGrpcModel TryGet(long messageId);
-        CompressedPage GetCompressedPage();
         
         DateTime LastAccessTime { get;}
         
@@ -30,6 +29,13 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         {
             return page.Count == 100000;
         }
+
+
+        public static CompressedPage GetCompressedPage(this IMessageContentPage page)
+        {
+            return new (page.PageId, page.GetMessages());
+        }
+
     }
     
 }

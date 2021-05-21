@@ -49,29 +49,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             }
         }
 
-
-        public CompressedPage  GetCompressedPage()
-        {
-            _readerWriterLockSlim.EnterReadLock();
-            try
-            {
-                if (_compressedSnapshot.ZippedContent.Length > 0)
-                    return _compressedSnapshot;
-
-                var list = GetMessagesAsList();
-
-                _compressedSnapshot = new CompressedPage(list);
-
-                return _compressedSnapshot;
-
-            }
-            finally
-            {
-                LastAccessTime = DateTime.UtcNow;
-                _readerWriterLockSlim.ExitReadLock();
-            }
-        }
-
         public DateTime LastAccessTime { get; private set; }
         public int Count { get; private set; }
         public long TotalContentSize => _messages.TotalContentSize;

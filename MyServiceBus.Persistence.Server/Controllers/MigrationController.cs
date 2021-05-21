@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
-using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
 
 namespace MyServiceBus.Persistence.Server.Controllers
 {
@@ -15,11 +14,10 @@ namespace MyServiceBus.Persistence.Server.Controllers
             MessagePageId pageId)
         {
 
-            var page = await ServiceLocator.LegacyCompressedMessagesStorage
-                .GetCompressedPageAsync(topicId, pageId)
-                .ToContentPageAsync(pageId);
+            var page = (await ServiceLocator.LegacyCompressedMessagesStorage
+                .GetCompressedPageAsync(topicId, pageId))
+                .ToReadOnlyContentPage();
 
-            page?.InitMessages();
             return page;
         }
 
@@ -39,7 +37,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
             }
 
             var uncompressedPage =
-                await ServiceLocator.PersistentOperationsScheduler.RestorePageAsync(topicId, pageId, "Migration");
+                await ServiceLocator.PersistentOperationsScheduler.RestorePageAsync(topicId, false, pageId, "Migration");
 
             if (uncompressedPage != null)
             {
@@ -73,14 +71,13 @@ namespace MyServiceBus.Persistence.Server.Controllers
             var thePageId = new MessagePageId(pageId);
 
             var page =
-                await ServiceLocator.CompressedMessagesStorage
-                    .GetCompressedPageAsync(topicId, thePageId)
-                    .ToContentPageAsync(thePageId);
+                (await ServiceLocator.CompressedMessagesStorage
+                    .GetCompressedPageAsync(topicId, thePageId))?
+                    .ToReadOnlyContentPage();
 
             
             if (page != null)
             {
-                page.InitMessages();
                 if (page.HasAllMessages())
                 {
                     Console.WriteLine("No need to do migration. Page has all the messages");
@@ -143,9 +140,9 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 Console.WriteLine("Reading Previous");
                 
                 var prevPage =
-                    await ServiceLocator.CompressedMessagesStorage
-                        .GetCompressedPageAsync(topicId, thePageId)
-                        .ToContentPageAsync(thePageId);
+                    (await ServiceLocator.CompressedMessagesStorage
+                        .GetCompressedPageAsync(topicId, thePageId))?
+                        .ToReadOnlyContentPage();
                 
                 prevPage =
                     await TryGetPageFromOtherFiles(topicId, prevPageId, prevPage);
@@ -169,9 +166,9 @@ namespace MyServiceBus.Persistence.Server.Controllers
             Console.WriteLine("Reading Next");
             
             var nextPage =
-                await ServiceLocator.CompressedMessagesStorage
-                    .GetCompressedPageAsync(topicId, thePageId)
-                    .ToContentPageAsync(thePageId);            
+                (await ServiceLocator.CompressedMessagesStorage
+                    .GetCompressedPageAsync(topicId, thePageId))?
+                    .ToReadOnlyContentPage();            
             nextPage =
                 await TryGetPageFromOtherFiles(topicId, nextPageId, nextPage);
 

@@ -62,7 +62,7 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
             {
                 var pageId = MessagesContentPagesUtils.GetPageId(topicAndQueuesSnapshot.MessageId);
                 
-                var task =  _persistentOperationsScheduler.RestorePageAsync(topicAndQueuesSnapshot.TopicId, pageId, "Init");
+                var task =  _persistentOperationsScheduler.RestorePageAsync(topicAndQueuesSnapshot.TopicId, true, pageId, "Init");
                 tasks.Add(task);
             }
 

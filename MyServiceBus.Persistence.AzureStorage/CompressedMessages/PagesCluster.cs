@@ -214,7 +214,7 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
             var tocIndex = GetPageTocIndex(pageId);
             var (position, length) = await GetPagePositionAllocationToc(tocIndex, false);
             if (length == 0)
-                return CompressedPage.CreateEmpty();
+                return CompressedPage.CreateEmpty(pageId);
 
             try
             {
@@ -227,12 +227,12 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
 
                 var buffer = result.GetBuffer();
             
-                return new CompressedPage(new ReadOnlyMemory<byte>(buffer, 0, (int)length));
+                return new CompressedPage(pageId, new ReadOnlyMemory<byte>(buffer, 0, (int)length));
             }
             catch (Exception)
             {
                 Console.WriteLine("Problem with reading page: "+pageId+" TocIndex: "+tocIndex+"; position:"+position+" Length:"+length);
-                return CompressedPage.CreateEmpty();
+                return CompressedPage.CreateEmpty(pageId);
             }
 
         }

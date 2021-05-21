@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.MessagesContent;
+using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 
 namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
 {
@@ -10,4 +11,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
 
         ValueTask DeleteIfExistsAsync(string topicId, MessagePageId pageId);
     }
+
+
+
 }
