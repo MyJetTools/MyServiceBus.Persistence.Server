@@ -38,10 +38,13 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             var restoredPage = new ReadOnlyContentPage(PageId, pageCompressedContent);
             return _messagesContentCache.AddPage(TopicId, restoredPage);
         }
+
+
+        private string LogContext => "Page: " + PageId + "; Reason:" + Reason;
         
         private async Task<IMessageContentPage> TryRestoreCompressedPage()
         {
-            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, "Page: "+PageId, $"Restoring page #{PageId} from compressed source");
+            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, LogContext, $"Restoring page #{PageId} from compressed source");
 
             var pageCompressedContent = await _compressedMessagesStorage.GetCompressedPageAsync(TopicId, PageId);
 
@@ -49,7 +52,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 
             if (pageCompressedContent.ZippedContent.Length == 0)
             {
-                _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,"Page: "+PageId, 
+                _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, LogContext, 
                     $"Can not restore page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}");
                 
     
@@ -57,7 +60,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
             }
 
             var msgs = pageCompressedContent.Messages;
-            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,"Page: "+PageId, 
+            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, LogContext, 
                 $"Restored page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}. Messages: {msgs.Count}");
             
             return pageCompressedContent.ZippedContent.Length == 0 
@@ -67,7 +70,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
         
         private async Task<IMessageContentPage> TryRestoreUncompressedPage()
         {
-            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, "Page: "+PageId, $"Restoring page #{PageId} from UnCompressed source");
+            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, LogContext, $"Restoring page #{PageId} from UnCompressed source");
 
             var dt = DateTime.UtcNow;
             var pageWriter = await _messagesContentPersistentStorage.TryGetPageWriterAsync(TopicId, PageId);
@@ -82,7 +85,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
                 messagesCount = page.Count;
             }
 
-            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,"Page: "+PageId, 
+            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,LogContext, 
                 $"Restored page #{PageId} from UnCompressed source. Duration: {DateTime.UtcNow - dt}. Messages: "+messagesCount);
             
             return pageWriter?.GetAssignedPage();
