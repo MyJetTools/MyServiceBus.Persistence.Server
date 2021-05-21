@@ -13,9 +13,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         private readonly MessagesContentDictionary _messages = new ();
 
-
-        private CompressedPage _compressedSnapshot;
-
         public WritableContentCachePage(ReaderWriterLockSlim readerWriterLockSlim, MessagePageId pageId)
         {
             _readerWriterLockSlim = readerWriterLockSlim;
@@ -39,7 +36,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                     _messages.AddOrUpdate(grpcModel);
                 }
 
-                _compressedSnapshot.EmptyIt();
             }
             finally
             {
@@ -81,13 +77,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         public static WritableContentCachePage Create(ReaderWriterLockSlim readerWriterLockSlim, IMessageContentPage messageContent)
         {
-            
-            var messages = messageContent.GetCompressedPage().Messages;
-
-            return new WritableContentCachePage(readerWriterLockSlim, messageContent.PageId, messages)
-            {
-                _compressedSnapshot = messageContent.GetCompressedPage(),
-            };
+            var result =  new WritableContentCachePage(readerWriterLockSlim, messageContent.PageId);
+            result._messages.Init(messageContent.GetMessages());
+            return result;
         }
 
     }

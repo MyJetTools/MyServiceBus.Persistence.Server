@@ -14,16 +14,16 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         public void AddOrUpdate(MessageContentGrpcModel model)
         {
             
-            TotalContentSize += model.Data.Length;
-            
             if (_messages.ContainsKey(model.MessageId))
             {
                 var oldModel = _messages[model.MessageId];
                 TotalContentSize -= oldModel.Data.Length;
                 _messages[model.MessageId] = model;
+                TotalContentSize += model.Data.Length;
                 return;
             }
             
+            TotalContentSize += model.Data.Length;
             _messages.Add(model.MessageId, model);
 
             _messagesAsList = null;
@@ -59,15 +59,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                 AddOrUpdate(grpcModel);
         }
 
-
-        public MessagesContentDictionary Clone()
-        {
-            return new ()
-            {
-                _messages = new SortedDictionary<long, MessageContentGrpcModel>(_messages),
-                _messagesAsList = _messagesAsList
-            };
-        }
 
     }
 }
