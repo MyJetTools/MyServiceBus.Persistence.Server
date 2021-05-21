@@ -138,12 +138,12 @@ namespace MyServiceBus.Persistence.Server
 
         public static async Task StopAsync()
         {
-            AppLogger.AddLog(LogProcess.System, "SYSTEM", "Start shutting down application");
+            AppLogger.AddLog(LogProcess.System, null, "SYSTEM", "Start shutting down application");
             AppGlobalFlags.IsShuttingDown = true;
 
             await _serviceProvider.GetRequiredService<ServicesDisposer>().Shutdown();
 
-            AppLogger.AddLog(LogProcess.System,"SYSTEM", "Everything stopped properly");
+            AppLogger.AddLog(LogProcess.System, null,"SYSTEM", "Everything stopped properly");
 
         }
     }

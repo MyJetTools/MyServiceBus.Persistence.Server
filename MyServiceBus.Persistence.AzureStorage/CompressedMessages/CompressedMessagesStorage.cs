@@ -36,7 +36,7 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
 
         public async Task WriteCompressedPageAsync(string topicId, MessagePageId pageId, CompressedPage pageData, IAppLogger appLogger)
         {
-            appLogger.AddLog(LogProcess.PagesCompressor, "Topic: +"+topicId+"; pageId: "+pageId.Value, $"Compressed page size is: {pageData.Content.Length}");
+            appLogger.AddLog(LogProcess.PagesCompressor, topicId,"PageId: "+pageId.Value, $"Compressed page size is: {pageData.Content.Length}");
             var pagesCluster = GetPagesCluster(topicId, pageId);
             await pagesCluster.WriteAsync(pageId, pageData);
         }

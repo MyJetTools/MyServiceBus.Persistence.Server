@@ -38,22 +38,22 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
                 return null;
             }
             
-            _appLogger.AddLog(LogProcess.PagesCompressor,   TopicId, $"Writing Compressed data for page {PageId}. Messages: "+_contentPage.Count);
+            _appLogger.AddLog(LogProcess.PagesCompressor,   TopicId,  "Page: "+PageId, $"Writing Compressed data for page {PageId}. Messages: "+_contentPage.Count);
             await _compressedMessagesStorage.WriteCompressedPageAsync(TopicId, PageId, compressedPage, _appLogger);
             
 
             
-            _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, $"Verifying compressed data for page {PageId}");
+            _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, "Page: "+PageId, $"Verifying compressed data for page {PageId}");
             var compressedPageToVerify = await _compressedMessagesStorage.GetCompressedPageAsync(TopicId, PageId);
 
             var messages = compressedPageToVerify.UnCompress();
 
-            _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, $"Verified compressed data for page {PageId}. Messages: " + messages.Count);
+            _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, "Page: "+PageId, $"Verified compressed data for page {PageId}. Messages: " + messages.Count);
             
-            _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, $"Deleting Uncompressed data for page {PageId}");
+            _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, "Page: "+PageId, $"Deleting Uncompressed data for page {PageId}");
             await _persistentStorage.DeleteNonCompressedPageAsync(TopicId, PageId);
 
-            _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, "Written Compressed Page: " + PageId +". Messages in the page:"+_contentPage.Count);
+            _appLogger.AddLog(LogProcess.PagesCompressor, TopicId, "Page: "+PageId, "Written Compressed Page: " + PageId +". Messages in the page:"+_contentPage.Count);
 
             return _contentPage;
         }

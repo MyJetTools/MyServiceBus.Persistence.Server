@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using MyServiceBus.Persistence.Domains;
@@ -7,20 +8,30 @@ namespace MyServiceBus.Persistence.Server.Controllers
     [ApiController]
     public class LogsController : Controller
     {
-        
-        
-        [HttpGet("/logs")]
-        public IActionResult Logs()
-        {
-            var logs = ServiceLocator.AppLogger.Get(LogProcess.All);
 
+
+        private static string CompileLogs(IReadOnlyList<LogItem> logs, string header)
+        {
             var sb = new StringBuilder();
             
-            sb.AppendLine($"Logs type: {LogProcess.All}");
+            sb.AppendLine(header);
             sb.AppendLine("------------------------------------------");
             foreach (var item in logs)
             {
-                sb.AppendLine(item.DateTime.ToString("O") + $" Ctx: {item.Context}");
+
+                if (item.TopicId != null)
+                {
+                    sb.AppendLine(item.DateTime.ToString("O")+"; TopicId: "+item.TopicId);
+                }
+                else
+                {
+                    sb.AppendLine(item.DateTime.ToString("O"));
+                }
+                
+
+
+                sb.AppendLine("Ctx:" + item.Context);
+
                 sb.AppendLine("Message: " + item.Message);
                 
                 if (item.StackTrace != null)
@@ -29,7 +40,18 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 sb.AppendLine("----------------------");
             }
 
-            return Content(sb.ToString());
+            return sb.ToString();
+        }
+        
+        
+        [HttpGet("/logs")]
+        public IActionResult Logs()
+        {
+            var logs = ServiceLocator.AppLogger.Get(LogProcess.All);
+
+            var content = CompileLogs(logs, $"Logs type: {LogProcess.All}");
+
+            return Content(content);
 
         }
         
@@ -39,23 +61,19 @@ namespace MyServiceBus.Persistence.Server.Controllers
         {
             var logs = ServiceLocator.AppLogger.Get(logProcess);
 
-            var sb = new StringBuilder();
+            var content = CompileLogs(logs, $"Logs type: {LogProcess.All}");
 
-            sb.AppendLine($"Logs type: {logProcess}");
-            sb.AppendLine("------------------------------------------");
-            foreach (var item in logs)
-            {
-                sb.AppendLine(item.DateTime.ToString("O") + $" Ctx: {item.Context}");
-                sb.AppendLine("Message: " + item.Message);
-                
-                if (item.StackTrace != null)
-                    sb.AppendLine("StackTrace: " + item.StackTrace);
+            return Content(content);
+        }
+        
+        [HttpGet("/logs/topic/{topic}")]
+        public IActionResult Logs(string topic)
+        {
+            var logs = ServiceLocator.AppLogger.GetByTopic(topic);
 
-                sb.AppendLine("----------------------");
-            }
+            var content = CompileLogs(logs, $"Logs by topic: {topic}");
 
-            return Content(sb.ToString());
-
+            return Content(content);
         }
     }
 }

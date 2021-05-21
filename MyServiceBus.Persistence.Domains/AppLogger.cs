@@ -8,15 +8,18 @@ namespace MyServiceBus.Persistence.Domains
 
     public interface IAppLogger
     {
-        void AddLog(LogProcess logProcess, string context, string message, string stackTrace = null);
+        void AddLog(LogProcess logProcess, string topicId, string context, string message, string stackTrace = null);
 
         IReadOnlyList<LogItem> Get(LogProcess logProcess);
+        
+        IReadOnlyList<LogItem> GetByTopic(string topicId);
     }
 
     public class LogItem 
     {
         public DateTime DateTime { get; set; }
         public string Context { get; set; }
+        public string TopicId { get; set; }
         public string Message { get; set; }
         public string StackTrace { get; set; }
     }
@@ -31,6 +34,8 @@ namespace MyServiceBus.Persistence.Domains
     {
 
         private readonly Dictionary<LogProcess, Queue<LogItem>> _logItems = new ();
+        
+        private readonly Dictionary<string, Queue<LogItem>> _logItemsByTopic = new ();
 
         public AppLogger()
         {
@@ -48,16 +53,15 @@ namespace MyServiceBus.Persistence.Domains
             }
         }
 
-        public void AddLog(LogProcess logProcess, string context, string message, string stackTrace)
+        public void AddLog(LogProcess logProcess, string topicId, string context, string message, string stackTrace)
         {
-
-
             var newItem = new LogItem
             {
                 Context = context,
                 Message = message,
                 DateTime = DateTime.UtcNow,
-                StackTrace = stackTrace
+                StackTrace = stackTrace,
+                TopicId = topicId
             };
 
             Console.WriteLine(newItem.DateTime.ToString("s") + ": [" + context + "] " + message);
@@ -72,6 +76,19 @@ namespace MyServiceBus.Persistence.Domains
                 logItems = _logItems[LogProcess.All];
                 logItems.Enqueue(newItem);
                 GcLogItems(logItems);
+
+                if (topicId != null)
+                {
+                    
+                    if (!_logItemsByTopic.ContainsKey(topicId))
+                        _logItemsByTopic.Add(topicId, new Queue<LogItem>());
+
+                    var logItemsByTopic = _logItemsByTopic[topicId];
+                    
+                    logItemsByTopic.Enqueue(newItem);
+                    GcLogItems(logItemsByTopic);
+
+                }
             }
 
         }
@@ -83,6 +100,17 @@ namespace MyServiceBus.Persistence.Domains
                 return  _logItems[logProcess].ToList();
             }
         }
-        
+
+        public IReadOnlyList<LogItem> GetByTopic(string topicId)
+        {
+            lock (_logItems)
+            {
+                if (_logItemsByTopic.TryGetValue(topicId, out var result))
+                    return result.ToList();
+                
+                
+                return Array.Empty<LogItem>();
+            }
+        }
     }
 }

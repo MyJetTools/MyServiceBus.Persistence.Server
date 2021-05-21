@@ -51,7 +51,7 @@ namespace MyServiceBus.Persistence.AzureStorage.IndexByMinute
 
             var minuteIndex = MessagesMinuteUtils.GetIndexOffset(minute);
             
-             _appLogger?.AddLog(LogProcess .MinuteIndexWriter,"Minute Index Writer", $"[{_topicId}] Writing minute index with minutes. "+minute + "min=" + messageId + "msgId;");
+             _appLogger?.AddLog(LogProcess .MinuteIndexWriter, _topicId, "MessageId:"+messageId, $"[{_topicId}] Writing minute index with minutes. "+minute + "min=" + messageId + "msgId;");
 
             await _builder.WriteInt64Async(messageId, minuteIndex);
 
