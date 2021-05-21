@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
@@ -102,7 +103,9 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
                 
                 await _lastCompressedPageStorage.SaveLastCompressedPageStorageAsync(topicId,
                     page.PageId);
-                
+
+
+         
                 _appLogger.AddLog(LogProcess.PagesCompressor, topicId,"Page:"+page.PageId.Value,
                     "Page compressed and saved");
 

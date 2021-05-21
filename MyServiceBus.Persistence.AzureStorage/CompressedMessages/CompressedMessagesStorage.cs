@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.Domains;
@@ -34,9 +36,37 @@ namespace MyServiceBus.Persistence.AzureStorage.CompressedMessages
             return result;
         }
 
+
+        private string ToHex(byte[] src)
+        {
+            var result = new StringBuilder();
+            foreach (var b in src)
+            {
+                var r = b.ToString("X");
+                
+                if (r.Length == 1)
+                {
+                    result.Append("0"+r);
+                }
+                else
+                {
+                    result.Append(r);
+                }
+
+                return result.ToString();
+
+            }
+
+            return result.ToString();
+        }
+
         public async Task WriteCompressedPageAsync(string topicId, MessagePageId pageId, CompressedPage pageData, IAppLogger appLogger)
         {
-            appLogger.AddLog(LogProcess.PagesCompressor, topicId,"PageId: "+pageId.Value, $"Compressed page size is: {pageData.Content.Length}");
+            var md5 = new MD5CryptoServiceProvider();
+
+            var hash = md5.ComputeHash(pageData.Content.ToArray());
+            
+            appLogger.AddLog(LogProcess.PagesCompressor, topicId,"PageId: "+pageId.Value, $"Compressed page size is: {pageData.Content.Length}. MD5: "+ToHex(hash));
             var pagesCluster = GetPagesCluster(topicId, pageId);
             await pagesCluster.WriteAsync(pageId, pageData);
         }
