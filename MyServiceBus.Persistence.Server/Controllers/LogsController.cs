@@ -15,6 +15,9 @@ namespace MyServiceBus.Persistence.Server.Controllers
             var logs = ServiceLocator.AppLogger.Get(LogProcess.All);
 
             var sb = new StringBuilder();
+            
+            sb.AppendLine($"Logs type: {LogProcess.All}");
+            sb.AppendLine("------------------------------------------");
             foreach (var item in logs)
             {
                 sb.AppendLine(item.DateTime.ToString("O") + $" Ctx: {item.Context}");
@@ -37,6 +40,9 @@ namespace MyServiceBus.Persistence.Server.Controllers
             var logs = ServiceLocator.AppLogger.Get(logProcess);
 
             var sb = new StringBuilder();
+
+            sb.AppendLine($"Logs type: {logProcess}");
+            sb.AppendLine("------------------------------------------");
             foreach (var item in logs)
             {
                 sb.AppendLine(item.DateTime.ToString("O") + $" Ctx: {item.Context}");
