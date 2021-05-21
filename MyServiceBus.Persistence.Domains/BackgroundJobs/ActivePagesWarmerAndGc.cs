@@ -51,7 +51,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
 
                 foreach (var pageIdToWarmUp in pagesInCache.GetPagesToWarmUp(activePages))
                 {
-                    _logger.AddLog(topicSnapshot.TopicId, "Warming up the page "+pageIdToWarmUp);
+                    _logger.AddLog(LogProcess.PagesLoaderOrGc, topicSnapshot.TopicId, "Warming up the page "+pageIdToWarmUp);
                     
                     await _messagesContentReader.TryGetPageAsync(topicSnapshot.TopicId, pageIdToWarmUp, "Warm Up");
                 }

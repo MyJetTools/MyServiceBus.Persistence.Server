@@ -1,7 +1,7 @@
-using System;
 using System.Threading.Tasks;
 using MyAzurePageBlobs;
 using MyAzurePageBlobs.DataBuilder.RandomAccess;
+using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 
 namespace MyServiceBus.Persistence.AzureStorage.IndexByMinute
@@ -11,6 +11,7 @@ namespace MyServiceBus.Persistence.AzureStorage.IndexByMinute
     public class IndexByMinuteBlobReaderWriter
     {
         private readonly IAzurePageBlob _azurePageBlob;
+        private readonly IAppLogger _appLogger;
         private readonly string _topicId;
 
         private static int _indexSize;
@@ -19,9 +20,10 @@ namespace MyServiceBus.Persistence.AzureStorage.IndexByMinute
 
         private bool _initialized;
 
-        public IndexByMinuteBlobReaderWriter(IAzurePageBlob azurePageBlob, string topicId, int cacheSize = 512)
+        public IndexByMinuteBlobReaderWriter(IAzurePageBlob azurePageBlob, IAppLogger appLogger, string topicId, int cacheSize = 512)
         {
             _azurePageBlob = azurePageBlob;
+            _appLogger = appLogger;
             _topicId = topicId;
             _indexSize = (IndexByMinuteUtils.LastDayOfTheYear+1) * MessagesMinuteUtils.IndexStep;
             _builder = new RandomAccessDataBuilder(azurePageBlob)
@@ -42,17 +44,14 @@ namespace MyServiceBus.Persistence.AzureStorage.IndexByMinute
                 : InitBlobAsync();
         }
 
-        public async ValueTask WriteAsync(int minute, long messageId, bool writeLog)
+        public async ValueTask WriteAsync(int minute, long messageId)
         {
             if (!_initialized)
                 await InitAsync();
 
-            if (writeLog)
-            {
-                Console.Write($"[{_topicId}] Writing minute index with minutes: ");
-                Console.WriteLine(minute + "min=" + messageId + "msgId;");
-            }
             var minuteIndex = MessagesMinuteUtils.GetIndexOffset(minute);
+            
+             _appLogger?.AddLog(LogProcess .MinuteIndexWriter,"Minute Index Writer", $"[{_topicId}] Writing minute index with minutes. "+minute + "min=" + messageId + "msgId;");
 
             await _builder.WriteInt64Async(messageId, minuteIndex);
 

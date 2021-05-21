@@ -58,7 +58,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
 
                 if (hasCompressedPage)
                 {
-                    _appLogger.AddLog(topicAndQueues.TopicId,
+                    _appLogger.AddLog(LogProcess.PagesCompressor, topicAndQueues.TopicId,
                         $"Page {pageToCompress.Value} is already compressed. Skipping");
                     await _lastCompressedPageStorage.SaveLastCompressedPageStorageAsync(topicAndQueues.TopicId,
                         pageToCompress);
@@ -97,13 +97,13 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
                 if (_appGlobalFlags.IsShuttingDown)
                     return;
 
-                _appLogger.AddLog(topicId, $"Detected the page {page.PageId.Value} which has to be compressed");
+                _appLogger.AddLog(LogProcess.PagesCompressor, topicId, $"Detected the page {page.PageId.Value} which has to be compressed");
                 await _scheduler.CompressPageAsync(topicId, page, "Compressor Detector");
                 
                 await _lastCompressedPageStorage.SaveLastCompressedPageStorageAsync(topicId,
                     page.PageId);
                 
-                _appLogger.AddLog(topicId,
+                _appLogger.AddLog(LogProcess.PagesCompressor, topicId,
                     $"Page {page.Count} compressed and saved");
 
                 _indexByMinuteWriter.NewMessages(topicId, page.GetMessages());

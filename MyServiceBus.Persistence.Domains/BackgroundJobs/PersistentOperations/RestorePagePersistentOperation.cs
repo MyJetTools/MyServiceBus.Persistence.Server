@@ -41,7 +41,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
         
         private async Task<IMessageContentPage> TryRestoreCompressedPage()
         {
-            _appLogger.AddLog(TopicId, $"Restoring page #{PageId} from compressed source");
+            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, $"Restoring page #{PageId} from compressed source");
 
             var pageCompressedContent = await _compressedMessagesStorage.GetCompressedPageAsync(TopicId, PageId);
 
@@ -49,12 +49,12 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
 
             if (pageCompressedContent.Content.Length == 0)
             {
-                _appLogger.AddLog(TopicId,
+                _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,
                     $"Can not restore page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}");
                 return null;
             }
             
-            _appLogger.AddLog(TopicId,
+            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,
                 $"Restored page #{PageId} from compressed source. Duration: {DateTime.UtcNow - dt}");
             
             return pageCompressedContent.Content.Length == 0 
@@ -64,7 +64,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
         
         private async Task<IMessageContentPage> TryRestoreUncompressedPage()
         {
-            _appLogger.AddLog(TopicId, $"Restoring page #{PageId} from UnCompressed source");
+            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId, $"Restoring page #{PageId} from UnCompressed source");
 
             var dt = DateTime.UtcNow;
             var pageWriter = await _messagesContentPersistentStorage.TryGetPageWriterAsync(TopicId, PageId);
@@ -75,7 +75,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs.PersistentOperations
                 pageWriter = await _messagesContentPersistentStorage.CreatePageWriterAsync(TopicId, PageId, false, page, _globalFlags);
             }
 
-            _appLogger.AddLog(TopicId,
+            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, TopicId,
                 $"Restored page #{PageId} from UnCompressed source. Duration: {DateTime.UtcNow - dt}");
             
             return pageWriter?.GetAssignedPage();

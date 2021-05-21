@@ -69,7 +69,7 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
             await Task.WhenAll(tasks);
             _appGlobalFlags.Initialized = true;
             
-            _appLogger.AddLog("SYSTEM", "Application Initialized");
+            _appLogger.AddLog(LogProcess.System, "SYSTEM", "Application Initialized");
             
         }
   

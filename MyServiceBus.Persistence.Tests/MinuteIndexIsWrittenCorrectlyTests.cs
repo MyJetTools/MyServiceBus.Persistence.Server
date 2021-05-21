@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.AzureStorage.IndexByMinute;
+using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using NUnit.Framework;
 
@@ -16,13 +17,14 @@ namespace MyServiceBus.Persistence.Tests
         {
             var blob = new MyAzurePageBlobInMem();
 
-            var writer = new IndexByMinuteBlobReaderWriter(blob, "TEST", 9000);
+
+            var writer = new IndexByMinuteBlobReaderWriter(blob, null, "TEST", 9000);
 
             var now = DateTime.UtcNow;
             foreach (var dt in 2020.GoThroughEveryDay())
             {
                 var minuteNo = dt.GetMinuteWithinTHeYear();
-                await writer.WriteAsync(minuteNo, minuteNo+1, false);
+                await writer.WriteAsync(minuteNo, minuteNo+1);
             }
             
             Console.WriteLine("Saves done "+(DateTime.Now - now));

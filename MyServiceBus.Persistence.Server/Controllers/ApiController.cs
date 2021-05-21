@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using MyServiceBus.Persistence.AzureStorage.TopicMessages;
 using MyServiceBus.Persistence.Domains.TopicsAndQueues;
@@ -72,26 +71,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
             };
             return Json(resultObject);
         }
-        [HttpGet("/logs")]
-        public IActionResult Logs()
-        {
-            var logs = ServiceLocator.AppLogger.Get();
 
-            var sb = new StringBuilder();
-            foreach (var item in logs)
-            {
-                sb.AppendLine(item.DateTime.ToString("O") + $" Ctx: {item.Context}");
-                sb.AppendLine("Message: " + item.Message);
-                
-                if (item.StackTrace != null)
-                    sb.AppendLine("StackTrace: " + item.StackTrace);
-
-                sb.AppendLine("----------------------");
-            }
-
-            return Content(sb.ToString());
-
-        }
     }
     
     
