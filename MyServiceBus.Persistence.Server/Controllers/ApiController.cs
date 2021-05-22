@@ -52,7 +52,6 @@ namespace MyServiceBus.Persistence.Server.Controllers
 
                 topics = ServiceLocator.MessagesContentCache
                     .GetLoadedPages()
-                    .OrderBy(itm => itm.Key)
                     .Select(itm =>
                 {
 
@@ -71,7 +70,8 @@ namespace MyServiceBus.Persistence.Server.Controllers
                             {
                                 pageId = page.PageId.Value,
                                 hasSkipped = page.HasSkippedId,
-                                percent = page.Percent()
+                                percent = page.Percent(),
+                                count = page.Count
                             }),
                         activePages = (snapshot?.GetActivePages()
                                 .Select(messagePageId => messagePageId.Value) ?? Array.Empty<long>())

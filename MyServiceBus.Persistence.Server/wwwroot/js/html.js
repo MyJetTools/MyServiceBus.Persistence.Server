@@ -29,7 +29,7 @@ var HtmlRenderer = /** @class */ (function () {
                 }
                 badges += '<div>' +
                     '<div class="progress">' +
-                    '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.percent + '%</div>';
+                    '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.count + '</div>';
                 '</div>' +
                     '</div>';
             }

@@ -24,11 +24,16 @@ namespace MyServiceBus.Persistence.Server.Middlewares
                 try
                 {
                     if (IgnorePaths.ContainsKey(ctx.Request.Path.Value ?? ""))
+                    {
                         await next.Invoke();
+                        return;
+                    }
+                        
 
                     if (!ServiceLocator.AppGlobalFlags.Initialized)
                     {
                         await ctx.Response.WriteAsync("Application is not initialized yet");
+                        return;
                     }
 
                     if (ServiceLocator.AppGlobalFlags.IsShuttingDown)
