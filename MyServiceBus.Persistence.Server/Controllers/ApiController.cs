@@ -28,16 +28,16 @@ namespace MyServiceBus.Persistence.Server.Controllers
             var now = DateTime.UtcNow;
             var resultObject = new
             {
-                
+
                 activeOperations = tasks.Where(itm => itm.Active)
                     .Select(itm => new
-                {
-                    topicId = itm.TopicId,
-                    name = itm.Name,
-                    pageId = itm.MessagePageId.Value,
-                    dur = (now - itm.Created).ToString()
-                }),
-                
+                    {
+                        topicId = itm.TopicId,
+                        name = itm.Name,
+                        pageId = itm.MessagePageId.Value,
+                        dur = (now - itm.Created).ToString()
+                    }),
+
                 awaitingOperations = tasks.Where(itm => !itm.Active)
                     .Select(itm => new
                     {
@@ -46,30 +46,31 @@ namespace MyServiceBus.Persistence.Server.Controllers
                         pageId = itm.MessagePageId.Value,
                         dur = (now - itm.Created).ToString()
                     }),
-                
+
                 queuesSnapshotId = messageSnapshot.SnapshotId,
-           
+
                 topics = ServiceLocator.MessagesContentCache.GetLoadedPages().Select(itm =>
                 {
 
                     var snapshot = messageSnapshot.Cache.FirstOrDefault(st => st.TopicId == itm.Key);
 
                     var topicMetrics = ServiceLocator.MetricsByTopic.Get(itm.Key);
-                    
+
                     return new
                     {
                         topicId = itm.Key,
                         writePosition = topicMetrics.BlobPosition,
                         messageId = snapshot?.MessageId ?? -1,
                         savedMessageId = topicMetrics.MaxSavedMessageId,
-                        loadedPages = itm.Value.OrderBy(page => new
-                        {
-                            pageId = page.PageId.Value,
-                            hasSkipped = page.HasSkippedId
-                        }),
+                        loadedPages = itm.Value.OrderBy(itm => itm.PageId)
+                            .Select(page => new
+                            {
+                                pageId = page.PageId.Value,
+                                hasSkipped = page.HasSkippedId
+                            }),
                         activePages = (snapshot?.GetActivePages()
                                 .Select(messagePageId => messagePageId.Value) ?? Array.Empty<long>())
-                            .OrderBy(pageId => pageId), 
+                            .OrderBy(pageId => pageId),
                         queues = snapshot != null ? snapshot.QueueSnapshots : Array.Empty<QueueSnapshotGrpcModel>()
                     };
                 })
