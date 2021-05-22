@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
 using MyServiceBus.Persistence.Domains.MessagesContent;
-using MyServiceBus.Persistence.Domains.Metrics;
 
 namespace MyServiceBus.Persistence.Domains.PersistenceOperations
 {

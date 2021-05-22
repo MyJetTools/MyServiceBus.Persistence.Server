@@ -73,7 +73,7 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
                 tasks.Add(task);
             }
 
-            await Task.WhenAll(tasks);
+       //     await Task.WhenAll(tasks);
 
             _appGlobalFlags.Initialized = true;
             
