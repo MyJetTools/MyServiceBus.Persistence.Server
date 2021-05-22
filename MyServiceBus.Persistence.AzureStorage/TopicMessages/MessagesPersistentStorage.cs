@@ -20,7 +20,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         private readonly object _lockObject = new();
 
 
-        private WritePositionsByTopic _writePositionsByTopic;
+        private MetricsByTopic _metricsByTopic;
         private AppGlobalFlags _appGlobalFlags;
         
         private PageWritersCache GetOrCreatePageWritersCache(string topicId)
@@ -31,7 +31,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
                 if (_pageWritersCacheByTopic.TryGetValue(topicId, out var result))
                     return result;
 
-                result = new PageWritersCache(topicId, _getMessagesBlob, _appGlobalFlags, _writePositionsByTopic.GetWritePositionMetric(topicId));
+                result = new PageWritersCache(topicId, _getMessagesBlob, _appGlobalFlags, _metricsByTopic.Get(topicId));
                 
                 _pageWritersCacheByTopic.Add(topicId, result);
 
@@ -48,7 +48,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
         public void Inject(IServiceProvider sp)
         {
-            _writePositionsByTopic = sp.GetRequiredService<WritePositionsByTopic>();
+            _metricsByTopic = sp.GetRequiredService<MetricsByTopic>();
             _appGlobalFlags = sp.GetRequiredService<AppGlobalFlags>();
         }
 
@@ -83,16 +83,14 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
 
-        public async Task<long> SyncAsync(string topicId, MessagePageId pageId)
+        public async Task SyncAsync(string topicId, MessagePageId pageId)
         {
             var pageToExecute = TryGet(topicId, pageId);
 
             if (pageToExecute == null)
-                return -1;
+                return;
 
             await pageToExecute.SyncIfNeededAsync();
-
-            return pageToExecute.MaxMessageIdInBlob;
         }
 
 

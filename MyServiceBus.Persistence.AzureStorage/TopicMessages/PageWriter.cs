@@ -16,7 +16,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
     public class PageWriter : IPageWriter, IAsyncDisposable
     {
 
-        private readonly WritePositionMetric _writePositionMetric; 
+        private readonly TopicMetrics _topicMetrics;
 
         private readonly Dictionary<long, MessageContentGrpcModel> _messagesInBlob = new();
         
@@ -26,12 +26,13 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
         public MessagePageId PageId { get; }
 
-        public PageWriter(MessagePageId pageId, IAzurePageBlob azurePageBlob, WritePositionMetric writePositionMetric, int pagesReadingAmount)
+        public PageWriter(MessagePageId pageId, IAzurePageBlob azurePageBlob, 
+            TopicMetrics topicMetrics, int pagesReadingAmount)
         {
             _azurePageBlob = azurePageBlob;
             _pagesReadingAmount = pagesReadingAmount;
             PageId = pageId;
-            _writePositionMetric = writePositionMetric;
+            _topicMetrics = topicMetrics;
         }
 
 
@@ -82,7 +83,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             if (serializedMessages.Count > 0)
                 await UploadToBlobAsync(serializedMessages, grpcMessages);
             
-            _writePositionMetric.Update(PageId, _binaryPackagesSequenceBuilder.Position);
+            _topicMetrics.Update(PageId, _binaryPackagesSequenceBuilder.Position, MaxMessageIdInBlob);
         }
         
 
@@ -138,7 +139,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
                 if (MaxMessageIdInBlob < contentMessage.MessageId)
                     MaxMessageIdInBlob = contentMessage.MessageId;
                 
-                _writePositionMetric.Update(PageId, _binaryPackagesSequenceBuilder.Position);
+                _topicMetrics.Update(PageId, _binaryPackagesSequenceBuilder.Position, MaxMessageIdInBlob);
             }
             
             

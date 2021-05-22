@@ -37,9 +37,8 @@ namespace MyServiceBus.Persistence.Domains
             
             sr.AddSingleton<IndexByMinuteWriter>();
 
-            sr.AddSingleton<MaxPersistedMessageIdByTopic>();
-
-            sr.AddSingleton<WritePositionsByTopic>();
+            sr.AddSingleton<MetricsByTopic>();
+            
         }
         
     }

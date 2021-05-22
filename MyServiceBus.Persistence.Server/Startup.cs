@@ -46,12 +46,12 @@ namespace MyServiceBus.Persistence.Server
                 ServiceLocator.StopAsync().Wait();
 
 
-                foreach (var (topic, messageId) in ServiceLocator.MaxPersistedMessageIdByTopic.GetSnapshot())
+                foreach (var (topic, metrics) in ServiceLocator.MetricsByTopic.Get())
                 {
-                   ServiceLocator.AppLogger.AddLog(LogProcess.System, topic, "Last Save message before shutdown", messageId.ToString());
+                   ServiceLocator.AppLogger.AddLog(LogProcess.System, topic, "Last Save message before shutdown", metrics.MaxSavedMessageId.ToString());
 
 
-                   var pageId = MessagesContentPagesUtils.GetPageId(messageId);
+                   var pageId = MessagesContentPagesUtils.GetPageId(metrics.MaxSavedMessageId);
 
                    var page = ServiceLocator.MessagesContentCache.TryGetPage(topic, pageId);
 

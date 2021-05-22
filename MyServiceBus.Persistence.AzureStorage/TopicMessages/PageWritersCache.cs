@@ -17,17 +17,17 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
         private readonly Func<(string topicId, MessagePageId pageId), IAzurePageBlob> _getMessagesBlob;
         private readonly AppGlobalFlags _appGlobalFlags;
-        private readonly WritePositionMetric _writePositionMetric;
+        private readonly TopicMetrics _topicMetrics;
 
 
         private readonly string _topicId;
         public PageWritersCache(string topicId, Func<(string topicId, MessagePageId pageId),IAzurePageBlob> getMessagesBlob, 
-            AppGlobalFlags appGlobalFlags, WritePositionMetric writePositionMetric)
+            AppGlobalFlags appGlobalFlags, TopicMetrics topicMetrics)
         {
             _topicId = topicId;
             _getMessagesBlob = getMessagesBlob;
             _appGlobalFlags = appGlobalFlags;
-            _writePositionMetric = writePositionMetric;
+            _topicMetrics = topicMetrics;
         }
 
         
@@ -46,7 +46,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             if (writer != null)
                 return writer;
 
-            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _writePositionMetric,16384);
+            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _topicMetrics,16384);
 
             if (await writer.BlobExistsAsync())
                 await writer.AssignPageAndInitialize(_appGlobalFlags);
@@ -66,7 +66,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             if (writer != null)
                 return writer;
 
-            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _writePositionMetric,16384);
+            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _topicMetrics,16384);
 
             if (!await writer.BlobExistsAsync())
                 return null;

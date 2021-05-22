@@ -53,13 +53,15 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 {
 
                     var snapshot = messageSnapshot.Cache.FirstOrDefault(st => st.TopicId == itm.Key);
+
+                    var topicMetrics = ServiceLocator.MetricsByTopic.Get(itm.Key);
                     
                     return new
                     {
                         topicId = itm.Key,
-                        writePosition = ServiceLocator.WritePositionsByTopic.GetWritePositionMetric(itm.Key).Position,
+                        writePosition = topicMetrics.BlobPosition,
                         messageId = snapshot?.MessageId ?? -1,
-                        savedMessageId = ServiceLocator.MaxPersistedMessageIdByTopic.GetOrDefault(itm.Key),
+                        savedMessageId = topicMetrics.MaxSavedMessageId,
                         pages = itm.Value.OrderBy(pageId => pageId),
                         activePages = (snapshot?.GetActivePages()
                                 .Select(messagePageId => messagePageId.Value) ?? Array.Empty<long>())

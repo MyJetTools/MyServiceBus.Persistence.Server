@@ -11,17 +11,14 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
         private readonly MessagesContentCache _messagesContentCache;
         private readonly TaskSchedulerByTopic _taskSchedulerByTopic;
         private readonly AppGlobalFlags _appGlobalFlags;
-        private readonly MaxPersistedMessageIdByTopic _maxPersistedMessageIdByTopic;
 
         public SyncAndGcBlobOperations(IMessagesContentPersistentStorage messagesContentPersistentStorage,
-            MessagesContentCache messagesContentCache, TaskSchedulerByTopic taskSchedulerByTopic, AppGlobalFlags appGlobalFlags, 
-            MaxPersistedMessageIdByTopic maxPersistedMessageIdByTopic)
+            MessagesContentCache messagesContentCache, TaskSchedulerByTopic taskSchedulerByTopic, AppGlobalFlags appGlobalFlags)
         {
             _messagesContentPersistentStorage = messagesContentPersistentStorage;
             _messagesContentCache = messagesContentCache;
             _taskSchedulerByTopic = taskSchedulerByTopic;
             _appGlobalFlags = appGlobalFlags;
-            _maxPersistedMessageIdByTopic = maxPersistedMessageIdByTopic;
         }
 
 
@@ -39,10 +36,8 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
                 {
                     await _taskSchedulerByTopic.ExecuteTaskAsync(topicId, page.PageId, "Upload new messages", async ()=>
                     {
-                        var messageId =  await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
-                    
-                        if (messageId>0)
-                            _maxPersistedMessageIdByTopic.Update(topicId, messageId);
+                        await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
+ 
                     });
                 }
             }

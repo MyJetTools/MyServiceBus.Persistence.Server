@@ -30,12 +30,9 @@ namespace MyServiceBus.Persistence.Server
         public static TaskSchedulerByTopic TaskSchedulerByTopic { get; private set; }
         
         
-        public static WritePositionsByTopic WritePositionsByTopic { get; private set; }
+        public static MetricsByTopic MetricsByTopic { get; private set; }
         
         
-        public static MaxPersistedMessageIdByTopic MaxPersistedMessageIdByTopic { get; private set; }
-
-
         public static MessagesContentReader MessagesContentReader { get; private set; }
 
         private static QueueSnapshotWriter _queueSnapshotWriter;
@@ -97,7 +94,7 @@ namespace MyServiceBus.Persistence.Server
             QueueSnapshotCache = sp.GetRequiredService<QueueSnapshotCache>();
             MessagesContentCache = sp.GetRequiredService<MessagesContentCache>();
             MessagesContentReader = sp.GetRequiredService<MessagesContentReader>();
-            WritePositionsByTopic = sp.GetRequiredService<WritePositionsByTopic>();
+            MetricsByTopic = sp.GetRequiredService<MetricsByTopic>();
 
             _activePagesWarmerAndGc = sp.GetRequiredService<ActivePagesWarmerAndGc>();
 
@@ -119,9 +116,6 @@ namespace MyServiceBus.Persistence.Server
             LastCompressedPageStorage = sp.GetRequiredService<ILastCompressedPageStorage>();
 
             IndexByMinuteWriter = sp.GetRequiredService<IndexByMinuteWriter>();
-            
-            
-            MaxPersistedMessageIdByTopic = sp.GetRequiredService<MaxPersistedMessageIdByTopic>();
 
             SyncAndGcBlobOperations = sp.GetRequiredService<SyncAndGcBlobOperations>();
 

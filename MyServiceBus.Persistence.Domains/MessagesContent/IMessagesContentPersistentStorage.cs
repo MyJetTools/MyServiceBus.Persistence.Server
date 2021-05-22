@@ -36,7 +36,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         
         ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId);
 
-        Task<long> SyncAsync(string topicId, MessagePageId pageId);
+        Task SyncAsync(string topicId, MessagePageId pageId);
 
         ValueTask<GcWriterResult> TryToGcAsync(string topicId, MessagePageId pageId);
     }
