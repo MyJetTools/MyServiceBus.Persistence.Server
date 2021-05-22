@@ -41,7 +41,7 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
                     {
                         var result = await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
 
-                        while (result == SyncResult.Done)
+                        while (result != SyncResult.Done)
                         {
                             _appLogger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageId: " + page.PageId.Value,
                                 "There are messages to upload but no writer found. Creating one...");
