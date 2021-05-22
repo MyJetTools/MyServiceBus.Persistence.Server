@@ -51,9 +51,9 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _topicMetrics,16384, writableContentCachePage);
 
             if (await writer.BlobExistsAsync())
-                await writer.AssignPageAndInitialize(_appGlobalFlags);
+                await writer.InitializeAsync(_appGlobalFlags);
             else
-                await writer.CreateAndAssignAsync( _appGlobalFlags);
+                await writer.CreateAndInitializeAsync(_appGlobalFlags);
             
             _pageWriters.Add(pageId.Value, writer);
 
@@ -73,7 +73,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             if (!await writer.BlobExistsAsync())
                 return null;
   
-            await writer.AssignPageAndInitialize(_appGlobalFlags);
+            await writer.InitializeAsync(_appGlobalFlags);
             
             _pageWriters.Add(pageId.Value, writer);
 

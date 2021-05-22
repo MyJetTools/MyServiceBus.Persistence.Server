@@ -27,6 +27,11 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         public IPageWriter DisposedPageWriter { get; set; }
         
     }
+
+    public enum SyncResult
+    {
+        Done, WriterNotFound
+    }
     
     public interface IMessagesContentPersistentStorage
     {
@@ -36,7 +41,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         
         ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId);
 
-        Task SyncAsync(string topicId, MessagePageId pageId);
+        Task<SyncResult> SyncAsync(string topicId, MessagePageId pageId);
 
         ValueTask<GcWriterResult> TryToGcAsync(string topicId, MessagePageId pageId);
 

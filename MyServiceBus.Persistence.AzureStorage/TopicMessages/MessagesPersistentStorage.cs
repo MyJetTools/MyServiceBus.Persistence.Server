@@ -83,14 +83,16 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
 
-        public async Task SyncAsync(string topicId, MessagePageId pageId)
+        public async Task<SyncResult> SyncAsync(string topicId, MessagePageId pageId)
         {
             var pageToExecute = TryGet(topicId, pageId);
 
             if (pageToExecute == null)
-                return;
+                return SyncResult.WriterNotFound;
 
             await pageToExecute.SyncIfNeededAsync();
+
+            return SyncResult.Done;
         }
 
 

@@ -63,20 +63,7 @@ namespace MyServiceBus.Persistence.Server.Grpc
                 {
                     var newWritablePage = ServiceLocator.MessagesContentCache.CreateWritablePage(contract.TopicId, messagePageId);
                     newWritablePage.NewMessages(group);
-
-                    await ServiceLocator.TaskSchedulerByTopic.ExecuteTaskAsync(contract.TopicId, messagePageId, "Create new Page", async ()=>
-                    {
-                        
-                        ServiceLocator.AppLogger.AddLog(LogProcess.PagesLoaderOrGc, contract.TopicId, "PageID: "+messagePageId, "Initiate new message");
-
-                        await ServiceLocator.MessagesContentPersistentStorage.CreateNewPageAsync(contract.TopicId,
-                            messagePageId, newWritablePage);
-
-                    });
-
-
                 }
-                
   
             }
 

@@ -117,13 +117,13 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         public long MaxMessageIdInBlob { get; private set; }
 
 
-        public async ValueTask CreateAndAssignAsync(AppGlobalFlags appGlobalFlags)
+        public async ValueTask CreateAndInitializeAsync(AppGlobalFlags appGlobalFlags)
         {
             await _azurePageBlob.CreateIfNotExists();
-            await AssignPageAndInitialize(appGlobalFlags);
+            await InitializeAsync(appGlobalFlags);
         }
         
-        public async Task AssignPageAndInitialize(AppGlobalFlags appGlobalFlags)
+        public async Task InitializeAsync(AppGlobalFlags appGlobalFlags)
         {
             await LoadMessagesAndInitBlobAsync(appGlobalFlags);
             AssignedPage.Init(_messagesInBlob.Values);

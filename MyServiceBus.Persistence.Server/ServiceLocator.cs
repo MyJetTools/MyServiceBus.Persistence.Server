@@ -140,7 +140,7 @@ namespace MyServiceBus.Persistence.Server
             
             
                         
-            _taskTimerSyncMessages.Register("PersistentOperationsScheduler", SyncAndGcBlobOperations.SyncAndGc);
+            _taskTimerSyncMessages.Register("PersistentOperationsScheduler", SyncAndGcBlobOperations.Sync);
             
             _taskTimerSyncMessages.RegisterExceptionHandler((timer, e) =>
             {
