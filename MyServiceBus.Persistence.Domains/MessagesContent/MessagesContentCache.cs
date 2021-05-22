@@ -116,9 +116,13 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
                     {
                         if (messageContentPage is not WritableContentCachePage writableContentCachePage) 
                             continue;
-                        
-                        result ??= new List<WritableContentCachePage>();
-                        result.Add(writableContentCachePage);
+
+
+                        if (writableContentCachePage.NotSynchronizedCount > 0)
+                        {
+                            result ??= new List<WritableContentCachePage>();
+                            result.Add(writableContentCachePage);
+                        }
                     }
 
                 }
