@@ -63,7 +63,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                         writePosition = topicMetrics.BlobPosition,
                         messageId = snapshot?.MessageId ?? -1,
                         savedMessageId = topicMetrics.MaxSavedMessageId,
-                        loadedPages = itm.Value.OrderBy(itm => itm.PageId)
+                        loadedPages = itm.Value.OrderBy(page => page.PageId.Value)
                             .Select(page => new
                             {
                                 pageId = page.PageId.Value,
