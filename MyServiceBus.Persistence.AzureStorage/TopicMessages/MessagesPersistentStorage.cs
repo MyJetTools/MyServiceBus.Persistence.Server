@@ -129,5 +129,18 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
                 DisposedPageWriter = result
             };
         }
+
+        public IReadOnlyList<IPageWriter> GetLoadedWriters(string topicId)
+        {
+            lock (_lockObject)
+            {
+
+                if (_pageWritersCacheByTopic.TryGetValue(topicId, out var result))
+                    return result.GetWriters();
+
+
+                return Array.Empty<IPageWriter>();
+            }
+        }
     }
 }

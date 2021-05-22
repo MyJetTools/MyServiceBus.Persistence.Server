@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.Domains;
@@ -90,6 +91,11 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             }
             return null;
         }
-        
+
+
+        public IReadOnlyList<IPageWriter> GetWriters()
+        {
+            return _pageWriters.Values.ToList();
+        }
     }
 }

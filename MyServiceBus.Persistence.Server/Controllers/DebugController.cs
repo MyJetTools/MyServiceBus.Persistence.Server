@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MyServiceBus.Persistence.Domains.MessagesContent;
@@ -46,6 +47,15 @@ namespace MyServiceBus.Persistence.Server.Controllers
 
             return Json(result);
 
+        }
+
+
+        [HttpGet("/Debug/GetWriters")]
+        public IActionResult GetWriters([Required] [FromQuery] string topicId)
+        {
+            var writers = ServiceLocator.MessagesContentPersistentStorage.GetLoadedWriters(topicId);
+            var result = writers.Select(itm => itm.PageId.Value);
+            return Json(result);
         }
     }
 }
