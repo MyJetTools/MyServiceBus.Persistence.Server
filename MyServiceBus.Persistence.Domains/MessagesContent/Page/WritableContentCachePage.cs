@@ -35,11 +35,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             try
             {
                 foreach (var grpcModel in messagesToAdd)
-                {
-                    _messages.AddOrUpdate(grpcModel);
-                    _messagesToSynchronize.Add(grpcModel);
-                }
-
+                    if (_messages.AddOrUpdate(grpcModel))
+                        _messagesToSynchronize.Add(grpcModel);
             }
             finally
             {

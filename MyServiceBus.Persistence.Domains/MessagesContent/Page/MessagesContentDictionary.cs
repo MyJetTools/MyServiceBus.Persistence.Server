@@ -11,53 +11,53 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         
         private IReadOnlyList<MessageContentGrpcModel> _messagesAsList;
         
-        
-        public bool HasSkippedId { get; private set; }
-        public void AddOrUpdate(MessageContentGrpcModel model)
+        public bool AddOrUpdate(MessageContentGrpcModel newMessage)
         {
 
             try
             {
-                if (_messages.ContainsKey(model.MessageId))
+
+                if (_messages.TryGetValue(newMessage.MessageId, out var existing))
                 {
-                    var oldModel = _messages[model.MessageId];
+                    if (existing.Created == newMessage.Created)
+                        return false;
+                    
+                    var oldModel = _messages[existing.MessageId];
                     TotalContentSize -= oldModel.Data.Length;
-                    _messages[model.MessageId] = model;
-                    TotalContentSize += model.Data.Length;
-                    return;
+                    _messages[existing.MessageId] = newMessage;
+                    TotalContentSize += existing.Data.Length;
+                    return true; 
                 }
                 
-                TotalContentSize += model.Data.Length;
-                _messages.Add(model.MessageId, model);
+                TotalContentSize += newMessage.Data.Length;
+                _messages.Add(newMessage.MessageId, newMessage);
 
                 _messagesAsList = null;
+                return true;
             }
             finally
             {
 
                 if (MaxMessageId == -1)
                 {
-                    MaxMessageId = model.MessageId;
+                    MaxMessageId = newMessage.MessageId;
                 }
                 else
                 {
-                    if (MaxMessageId < model.MessageId)
-                        MaxMessageId = model.MessageId;
+                    if (MaxMessageId < newMessage.MessageId)
+                        MaxMessageId = newMessage.MessageId;
                 }
                 
                 
                 if (MinMessageId == -1)
                 {
-                    MinMessageId = model.MessageId;
+                    MinMessageId = newMessage.MessageId;
                 }
                 else
                 {
-                    if (MinMessageId > model.MessageId)
-                        MinMessageId = model.MessageId;
+                    if (MinMessageId > newMessage.MessageId)
+                        MinMessageId = newMessage.MessageId;
                 }
-
-                HasSkippedId = MaxMessageId - MinMessageId  >= Count;
-
             }
     
         }
