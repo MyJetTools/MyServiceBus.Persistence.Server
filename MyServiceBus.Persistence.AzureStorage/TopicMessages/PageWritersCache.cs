@@ -61,14 +61,14 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
 
-        public async ValueTask<PageWriter> TryGetAsync(MessagePageId pageId)
+        public async ValueTask<PageWriter> TryGetAsync(MessagePageId pageId, Func<WritableContentCachePage> getWritableContentCachePage)
         {
             var writer = TryGetOrNull(pageId);
 
             if (writer != null)
                 return writer;
 
-            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _topicMetrics,16384, new WritableContentCachePage(pageId));
+            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _topicMetrics,16384, getWritableContentCachePage());
 
             if (!await writer.BlobExistsAsync())
                 return null;

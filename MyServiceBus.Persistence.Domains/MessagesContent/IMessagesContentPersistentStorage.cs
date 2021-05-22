@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
@@ -39,7 +40,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         
         ValueTask CreateNewPageAsync(string topicId, MessagePageId pageId, WritableContentCachePage writableContentCachePage);
         
-        ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId);
+        ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId, Func<WritableContentCachePage> getWritableContentCachePage);
 
         Task<SyncResult> SyncAsync(string topicId, MessagePageId pageId);
 

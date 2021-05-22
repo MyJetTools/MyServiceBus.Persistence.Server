@@ -83,10 +83,11 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
                 $"Restoring page #{pageId} from UnCompressed source");
 
             var dt = DateTime.UtcNow;
+            
+            
 
-            var pageWriter = await _messagesContentPersistentStorage.TryGetAsync(topicId, pageId);
-
-            _messagesContentCache.AddPage(topicId, pageWriter.AssignedPage);
+            var pageWriter = await _messagesContentPersistentStorage.TryGetAsync(topicId, pageId, 
+                () => _messagesContentCache.CreateWritablePage(topicId, pageId));
 
             _appLogger.AddLog(LogProcess.PagesLoaderOrGc, topicId, logContext,
                 $"Restored page #{pageId} from UnCompressed source. Duration: {DateTime.UtcNow - dt}. Messages: " +
