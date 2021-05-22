@@ -39,7 +39,8 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 page.MaxMessageId,
                 page.Count,
                 shouldHaveAmount = page.ShouldHaveAmount(),
-                hasSkipped = page.HasSkipped()
+                hasSkipped = page.HasSkipped(),
+                notSavedAmount = page.NotSavedAmount
             };
 
 

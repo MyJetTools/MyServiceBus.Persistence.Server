@@ -15,18 +15,18 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         public long MinMessageId => _messages.MinMessageId;
         public long MaxMessageId => _messages.MaxMessageId;
+        public int NotSavedAmount { get; private set; }
 
         public WritableContentCachePage(MessagePageId pageId)
         {
             PageId = pageId;
-
         }
 
         private void SyncLastAccess()
         {
             LastAccessTime = DateTime.UtcNow;
             Count = _messages.Count;
-            NotSynchronizedCount = _messagesToSynchronize.Count;
+            NotSavedAmount = _messagesToSynchronize.Count;
         }
 
         public void NewMessages(IEnumerable<MessageContentGrpcModel> messagesToAdd)
@@ -45,8 +45,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             }
         }
 
-
-
         public IReadOnlyList<MessageContentGrpcModel> GetMessagesToSynchronize()
         {
             _readerWriterLockSlim.EnterWriteLock();
@@ -64,23 +62,17 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             {
                 _readerWriterLockSlim.ExitWriteLock();
             }
-            
         }
-
         
         public void Init(IEnumerable<MessageContentGrpcModel> messagesToAdd)
         {
             _readerWriterLockSlim.EnterWriteLock();
             try
             {
-                
                 foreach (var grpcModel in messagesToAdd)
                 {
                     _messages.AddOrUpdate(grpcModel);
                 }
-                
-                
-
             }
             finally
             {
@@ -91,8 +83,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         public DateTime LastAccessTime { get; private set; } =DateTime.UtcNow;
         public int Count { get; private set; }
-        
-        public int NotSynchronizedCount { get; private set; }
         
         public long TotalContentSize => _messages.TotalContentSize;
 
@@ -122,31 +112,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                 _readerWriterLockSlim.ExitReadLock();
             } 
         }
-
-
-        public  (IReadOnlyList<long> holes, int count)  TestIfThereAreHoles(long pageId)
-        {
-            _readerWriterLockSlim.EnterReadLock();
-            try
-            {
-                return _messages.TestIfThereAreHoles(pageId);
-            }
-            finally
-            {
-                LastAccessTime = DateTime.UtcNow;
-                _readerWriterLockSlim.ExitReadLock();
-            } 
-        }
-
-        public static WritableContentCachePage Create(IMessageContentPage messageContent)
-        {
-            var result =  new WritableContentCachePage(messageContent.PageId);
-            result._messages.Init(messageContent.GetMessages());
-            return result;
-        }
-
-
-
 
 
     }

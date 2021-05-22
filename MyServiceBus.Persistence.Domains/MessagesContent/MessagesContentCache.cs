@@ -31,6 +31,26 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             }
         }
 
+
+        public WritableContentCachePage TryGetWritablePage(string topicId, MessagePageId pageId)
+        {
+            var result = TryGetPage(topicId, pageId);
+            return result as WritableContentCachePage;
+        }
+        
+        public WritableContentCachePage CreateWritablePage(string topicId, MessagePageId pageId)
+        {
+            lock (_lockObject)
+            {
+                if (!_cache.ContainsKey(topicId))
+                    _cache.Add(topicId, new Dictionary<long, IMessageContentPage>());
+
+                var writablePage = new WritableContentCachePage(pageId);
+                _cache[topicId].Add(writablePage.PageId.Value, writablePage);
+                return writablePage;
+            }
+        }
+
         
         
         public void AddPage(string topicId, IMessageContentPage page)
@@ -118,7 +138,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
                             continue;
 
 
-                        if (writableContentCachePage.NotSynchronizedCount > 0)
+                        if (writableContentCachePage.NotSavedAmount > 0)
                         {
                             result ??= new List<WritableContentCachePage>();
                             result.Add(writableContentCachePage);

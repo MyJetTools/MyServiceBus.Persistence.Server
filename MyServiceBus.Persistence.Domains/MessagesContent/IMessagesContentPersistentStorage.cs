@@ -32,7 +32,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
     {
         Task DeleteNonCompressedPageAsync(string topicId, MessagePageId pageId);
         
-        ValueTask<IPageWriter> GetOrCreateAsync(string topicId, MessagePageId pageId);
+        ValueTask CreateNewPageAsync(string topicId, MessagePageId pageId, WritableContentCachePage writableContentCachePage);
         
         ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId);
 

@@ -15,6 +15,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         IReadOnlyList<MessageContentGrpcModel> GetMessages();
         public long MinMessageId { get; }
         public long MaxMessageId { get; }
+        
+        public int NotSavedAmount { get; }
     }
 
     public static class MessageContentPageExtensions

@@ -22,6 +22,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         
         public long MinMessageId => _compressedPage.MinMessagesId;
         public long MaxMessageId => _compressedPage.MaxMessagesId;
+        public int NotSavedAmount => 0;
 
         public MessagePageId PageId { get; }
 

@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.MessagesContent;
+using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 using MyServiceBus.Persistence.Domains.Metrics;
 
 namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
@@ -61,18 +62,17 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
         
 
-        public async ValueTask<IPageWriter> GetOrCreateAsync(string topicId, MessagePageId pageId)
+        public async ValueTask CreateNewPageAsync(string topicId, MessagePageId pageId, WritableContentCachePage writableContentCachePage)
         {
-            var cache = GetOrCreatePageWritersCache(topicId);
-            return await cache.GetOrCreateAsync(pageId);
+            var cacheByTopic = GetOrCreatePageWritersCache(topicId);
+            await cacheByTopic.CreateNewOrLoadAsync(pageId, writableContentCachePage);
         }
 
         public async ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId)
         {
             var cache = GetOrCreatePageWritersCache(topicId);
-            return await cache.GetOrCreateAsync(pageId);
+            return await cache.TryGetAsync(pageId);
         }
-
 
         private PageWriter TryGet(string topicId, MessagePageId pageId)
         {
@@ -116,7 +116,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
                     NotFound = true
                 };
 
-            if (result.AssignedPage.NotSynchronizedCount > 0)
+            if (result.AssignedPage.NotSavedAmount > 0)
                 return new GcWriterResult
                 {
                     NotReadyToGc = true

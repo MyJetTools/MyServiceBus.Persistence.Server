@@ -27,12 +27,13 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         public MessagePageId PageId { get; }
 
         public PageWriter(MessagePageId pageId, IAzurePageBlob azurePageBlob, 
-            TopicMetrics topicMetrics, int pagesReadingAmount)
+            TopicMetrics topicMetrics, int pagesReadingAmount, WritableContentCachePage writableContentCachePage)
         {
             _azurePageBlob = azurePageBlob;
             _pagesReadingAmount = pagesReadingAmount;
             PageId = pageId;
             _topicMetrics = topicMetrics;
+            AssignedPage = writableContentCachePage;
         }
 
 
@@ -97,7 +98,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
 
-        public WritableContentCachePage AssignedPage { get; private set; }
+        public WritableContentCachePage AssignedPage { get; }
 
 
         public async ValueTask<bool> BlobExistsAsync()
@@ -118,7 +119,6 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         public async Task AssignPageAndInitialize(AppGlobalFlags appGlobalFlags)
         {
             await LoadMessagesAndInitBlobAsync(appGlobalFlags);
-            AssignedPage = new WritableContentCachePage(PageId);
             AssignedPage.Init(_messagesInBlob.Values);
         }
 

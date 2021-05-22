@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 using MyServiceBus.Persistence.Grpc;
@@ -51,10 +52,31 @@ namespace MyServiceBus.Persistence.Server.Grpc
             foreach (var group in groups)
             {
                 var messagePageId = new MessagePageId(group.Key);
-             
-                 var storage = await ServiceLocator.MessagesContentPersistentStorage.GetOrCreateAsync(contract.TopicId, messagePageId);
-                 var page = storage.AssignedPage;
-                 page.NewMessages(group);
+
+                var writablePage = ServiceLocator.MessagesContentCache.TryGetWritablePage(contract.TopicId, messagePageId);
+
+                if (writablePage != null)
+                {
+                    writablePage.NewMessages(group);
+                }
+                else
+                {
+                    var newWritablePage = ServiceLocator.MessagesContentCache.CreateWritablePage(contract.TopicId, messagePageId);
+                    newWritablePage.NewMessages(group);
+
+                    await ServiceLocator.TaskSchedulerByTopic.ExecuteTaskAsync(contract.TopicId, messagePageId, "Create new Page", async ()=>
+                    {
+                        
+                        ServiceLocator.AppLogger.AddLog(LogProcess.PagesLoaderOrGc, contract.TopicId, "PageID: "+messagePageId, "Initiate new message");
+
+                        await ServiceLocator.MessagesContentPersistentStorage.CreateNewPageAsync(contract.TopicId,
+                            messagePageId, newWritablePage);
+
+                    });
+
+
+                }
+                
   
             }
 

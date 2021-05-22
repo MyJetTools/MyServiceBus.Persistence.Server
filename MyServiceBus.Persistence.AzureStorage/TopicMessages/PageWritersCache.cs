@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.MessagesContent;
+using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 using MyServiceBus.Persistence.Domains.Metrics;
 
 namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
@@ -39,14 +40,14 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
                 
         }
 
-        public async ValueTask<PageWriter> GetOrCreateAsync(MessagePageId pageId)
+        public async ValueTask<PageWriter> CreateNewOrLoadAsync(MessagePageId pageId, WritableContentCachePage writableContentCachePage)
         {
             var writer = TryGetOrNull(pageId);
 
             if (writer != null)
                 return writer;
 
-            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _topicMetrics,16384);
+            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _topicMetrics,16384, writableContentCachePage);
 
             if (await writer.BlobExistsAsync())
                 await writer.AssignPageAndInitialize(_appGlobalFlags);
@@ -66,7 +67,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             if (writer != null)
                 return writer;
 
-            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _topicMetrics,16384);
+            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _topicMetrics,16384, new WritableContentCachePage(pageId));
 
             if (!await writer.BlobExistsAsync())
                 return null;
