@@ -37,18 +37,18 @@ var HtmlRenderer = /** @class */ (function () {
                 activePagesBadges += '<span class="badge badge-warning" style="margin-left: 5px">' + activePage + '</span>';
             }
             var queuesContent = this.renderQueuesTableContent(topic.queues);
-            result += '<tr style="font-size: 10px">' +
-                '<td>' + topic.topicId + '<div>WritePos: ' + topic.writePosition + '</div></td>' +
+            result += '<tr style="font-size: 12px">' +
+                '<td>' + topic.topicId + '<div>WritePos: ' + topic.writePosition + '</div>' +
+                '<div>Active:</div>' + activePagesBadges + '<hr/><div>Loaded:</div>' + badges + '</td>' +
                 '<td>' + queuesContent + '</td>' +
                 '<td><div>Current Id:' + topic.messageId + '</div><div>Last Saved:' + topic.savedMessageId + '</div></td>' +
-                '<td><div>Active:</div>' + activePagesBadges + '<hr/><div>Loaded:</div>' + badges + '</td>' +
                 '</tr>';
         }
         return result;
     };
     HtmlRenderer.renderMainTable = function (topics) {
         var content = this.renderLoadedPagesContent(topics);
-        return '<table class="table table-striped"><tr><th>Topic</th><th>Queues</th><th>MessageId</th><th>Pages</th></tr>' + content + '</table>';
+        return '<table class="table table-striped"><tr><th>Topic</th><th>Queues</th><th>MessageId</th></tr>' + content + '</table>';
     };
     HtmlRenderer.renderAdditionalFields = function (r) {
         return '<div>Queue SnapshotId: ' + r.queuesSnapshotId + '</div>';

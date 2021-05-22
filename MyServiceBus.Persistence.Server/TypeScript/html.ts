@@ -47,11 +47,11 @@ class HtmlRenderer
             let queuesContent = this.renderQueuesTableContent(topic.queues);
             
             
-            result += '<tr style="font-size: 10px">' +
-                '<td>'+topic.topicId+'<div>WritePos: '+topic.writePosition+'</div></td>' +
+            result += '<tr style="font-size: 12px">' +
+                '<td>'+topic.topicId+'<div>WritePos: '+topic.writePosition+'</div>' +
+                '<div>Active:</div>'+activePagesBadges+'<hr/><div>Loaded:</div>'+badges+'</td>' +
                 '<td>'+queuesContent+'</td>' +
                 '<td><div>Current Id:'+topic.messageId+'</div><div>Last Saved:'+topic.savedMessageId+'</div></td>' +
-                '<td><div>Active:</div>'+activePagesBadges+'<hr/><div>Loaded:</div>'+badges+'</td>' +
                 '</tr>'
         }
         
@@ -62,7 +62,7 @@ class HtmlRenderer
 
         let content = this.renderLoadedPagesContent(topics);
         
-        return '<table class="table table-striped"><tr><th>Topic</th><th>Queues</th><th>MessageId</th><th>Pages</th></tr>'+content+'</table>';
+        return '<table class="table table-striped"><tr><th>Topic</th><th>Queues</th><th>MessageId</th></tr>'+content+'</table>';
 
     }
     
