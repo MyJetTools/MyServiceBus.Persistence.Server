@@ -13,11 +13,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         private List<MessageContentGrpcModel> _messagesToSynchronize = new();
 
-
         public long MinMessageId => _messages.MinMessageId;
         public long MaxMessageId => _messages.MaxMessageId;
-
-        public bool HasSkippedId => _messages.HasSkippedId;
 
         public WritableContentCachePage(MessagePageId pageId)
         {

@@ -69,7 +69,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                             .Select(page => new
                             {
                                 pageId = page.PageId.Value,
-                                hasSkipped = page.HasSkippedId,
+                                hasSkipped = page.HasSkipped(),
                                 percent = page.Percent(),
                                 count = page.Count
                             }),

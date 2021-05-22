@@ -9,7 +9,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
     public class ReadOnlyContentPage : IMessageContentPage
     {
 
-
         private readonly CompressedPage _compressedPage;
 
         public DateTime LastAccessTime { get; private set; }
@@ -20,9 +19,10 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         {
             return _compressedPage.Messages;
         }
-
-        public bool HasSkippedId => _compressedPage.MaxMessagesId - _compressedPage.MinMessagesId >= _compressedPage.Messages.Count;
         
+        public long MinMessageId => _compressedPage.MinMessagesId;
+        public long MaxMessageId => _compressedPage.MaxMessagesId;
+
         public MessagePageId PageId { get; }
 
         public ReadOnlyContentPage(CompressedPage compressedPage)

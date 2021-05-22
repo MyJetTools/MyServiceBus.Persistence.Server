@@ -19,8 +19,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         IReadOnlyList<MessageContentGrpcModel> GetMessages();
         
-        bool HasSkippedId { get; }
-
+        public long MinMessageId { get; }
+        public long MaxMessageId { get; }
     }
 
 
@@ -38,6 +38,11 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         public static int Percent(this IMessageContentPage page)
         {
             return page.Count / 1000;
+        }
+
+        public static bool HasSkipped(this IMessageContentPage page)
+        {
+            return page.MaxMessageId - page.MinMessageId >= page.Count;
         }
     }
     
