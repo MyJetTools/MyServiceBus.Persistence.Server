@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using MyServiceBus.Persistence.Domains;
 
 namespace MyServiceBus.Persistence.Server.Middlewares
 {
@@ -17,23 +19,32 @@ namespace MyServiceBus.Persistence.Server.Middlewares
         public static void UseGlobalFlagsHandler(this IApplicationBuilder app)
         {
 
-            app.Use((ctx, next) =>
+            app.Use(async (ctx, next) =>
             {
-                
-                if (IgnorePaths.ContainsKey(ctx.Request.Path.Value ?? ""))
-                    return next.Invoke();
-
-                if (!ServiceLocator.AppGlobalFlags.Initialized)
+                try
                 {
-                    return ctx.Response.WriteAsync("Application is not initialized yet");
+                    if (IgnorePaths.ContainsKey(ctx.Request.Path.Value ?? ""))
+                        await next.Invoke();
+
+                    if (!ServiceLocator.AppGlobalFlags.Initialized)
+                    {
+                        await ctx.Response.WriteAsync("Application is not initialized yet");
+                    }
+
+                    if (ServiceLocator.AppGlobalFlags.IsShuttingDown)
+                    {
+                        await ctx.Response.WriteAsync("Application is about to be shut down");
+                        return;
+                    }
+
+                    await next.Invoke();
+                }
+                catch (Exception e)
+                {
+                    ServiceLocator.AppLogger.AddLog(LogProcess.System, null, ctx.Request.Path, e.Message, e.StackTrace);
+                    throw;
                 }
 
-                if (ServiceLocator.AppGlobalFlags.IsShuttingDown)
-                {
-                    return ctx.Response.WriteAsync("Application is about to be shut down");
-                }
-
-                return next.Invoke();
             });
 
         }

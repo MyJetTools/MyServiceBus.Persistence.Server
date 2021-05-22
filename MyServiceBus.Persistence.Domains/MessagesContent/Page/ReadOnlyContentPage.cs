@@ -9,20 +9,19 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
     public class ReadOnlyContentPage : IMessageContentPage
     {
 
-        private readonly MessagesContentDictionary _messages = new ();
 
         private readonly CompressedPage _compressedPage;
 
         public DateTime LastAccessTime { get; private set; }
-        public int Count => _messages.Count;
-        public long TotalContentSize => _messages.TotalContentSize;
+        public int Count => _compressedPage.Messages.Count;
+        public long TotalContentSize => _compressedPage.ZippedContent.Length;
 
         public IReadOnlyList<MessageContentGrpcModel> GetMessages()
         {
             return _compressedPage.Messages;
         }
 
-        public bool HasSkippedId => _messages.HasSkippedId;
+        public bool HasSkippedId => _compressedPage.MaxMessagesId - _compressedPage.MinMessagesId >= _compressedPage.Messages.Count;
         
         public MessagePageId PageId { get; }
 
@@ -30,6 +29,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         {
             PageId = compressedPage.PageId;
             _compressedPage = compressedPage;
+  
             LastAccessTime = DateTime.UtcNow;
         }
 
@@ -38,7 +38,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             LastAccessTime = DateTime.UtcNow;
    
 
-            return _messages.TryGetOrNull(messageId);
+            return _compressedPage.Messages.FirstOrDefault(itm => itm.MessageId == messageId);
         }
 
     }

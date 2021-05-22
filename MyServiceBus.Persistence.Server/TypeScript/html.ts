@@ -29,14 +29,16 @@ class HtmlRenderer
             let badges = '';
             for (let loadedPage of topic.loadedPages) {
                 if (loadedPage.hasSkipped) {
-                    badges += '<span class="badge badge-danger" style="margin-left: 5px">' + loadedPage.pageId + '</span>';
+                    badges += '<div><span class="badge badge-danger" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 } else {
-                    badges += '<span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span>';
+                    badges += '<div><span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 }
 
-                badges += '<div><div class="progress">' +
+                badges += '<div>' +
+                    '<div class="progress">' +
                     '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.percent + '%</div>'
-                '</div>`</div>';
+                    '</div>' +
+                   '</div>';
             }
 
             let activePagesBadges = '';

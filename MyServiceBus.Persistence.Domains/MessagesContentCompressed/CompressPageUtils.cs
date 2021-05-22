@@ -55,17 +55,43 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
             PageId = pageId;
         }
 
+        private void CalcMinMax()
+        {
+            foreach (var msg in Messages)
+            {
+                if (MinMessagesId == -1)
+                {
+                    MinMessagesId = msg.MessageId;
+                }
+                else
+                {
+                    if (MinMessagesId > msg.MessageId)
+                    {
+                        MinMessagesId = msg.MessageId;
+                    }
+                }
+                
+                if (MaxMessagesId == -1)
+                {
+                    MaxMessagesId = msg.MessageId;
+                }
+                else
+                {
+                    if (MaxMessagesId < msg.MessageId)
+                    {
+                        MaxMessagesId = msg.MessageId;
+                    }
+                }
+                
+            }
+        }
+
         
         public MessagePageId PageId { get; }
-        public ReadOnlyMemory<byte> ZippedContent { get; private set; }
+        public ReadOnlyMemory<byte> ZippedContent { get; }
 
-        public void EmptyIt()
-        {
-            ZippedContent = null;
-            Messages = Array.Empty<MessageContentGrpcModel>();
-        }
-        
-        public IReadOnlyList<MessageContentGrpcModel> Messages { get; private set; }
+
+        public IReadOnlyList<MessageContentGrpcModel> Messages { get; }
 
 
         public static CompressedPage CreateEmpty(MessagePageId pageId)
@@ -78,6 +104,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
         {
             return new (this);
         }
+
+        public long MinMessagesId { get; private set; } = -1;
+        public long MaxMessagesId { get; private set; } = -1;
 
     }
 

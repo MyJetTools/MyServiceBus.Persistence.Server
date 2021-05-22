@@ -50,7 +50,10 @@ namespace MyServiceBus.Persistence.Server.Controllers
 
                 queuesSnapshotId = messageSnapshot.SnapshotId,
 
-                topics = ServiceLocator.MessagesContentCache.GetLoadedPages().Select(itm =>
+                topics = ServiceLocator.MessagesContentCache
+                    .GetLoadedPages()
+                    .OrderBy(itm => itm.Key)
+                    .Select(itm =>
                 {
 
                     var snapshot = messageSnapshot.Cache.FirstOrDefault(st => st.TopicId == itm.Key);
