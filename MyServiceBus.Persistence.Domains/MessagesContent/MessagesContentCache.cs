@@ -10,54 +10,43 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
     public class MessagesContentCache
     {
 
-        public class TopicContentGroup
-        {
-            public TopicContentGroup(string topicId)
-            {
-                TopicId = topicId;
-            }
-            public string TopicId { get; }
-            public readonly Dictionary<long, IMessageContentPage> Dictionary = new ();
-            
-        }
         
-        private readonly Dictionary<string, TopicContentGroup> _cache 
+        private readonly Dictionary<string, Dictionary<long, IMessageContentPage>> _cache 
             = new ();
 
         private IReadOnlyList<string> _topicsAsList = Array.Empty<string>();
 
 
+        private readonly object _lockObject = new();
+
+
         public IMessageContentPage TryGetPage(string topicId, MessagePageId pageId)
         {
-            lock (_cache)
+            lock (_lockObject)
             {
-                if (!_cache.ContainsKey(topicId))
-                    return null;
+                if (_cache.TryGetValue(topicId, out var byTopic))
+                    return byTopic.TryGetValue(pageId.Value, out var result) ? result : null;
 
-                return _cache[topicId].Dictionary.TryGetValue(pageId.Value, out var result) ? result : null;
+                return null;
             }
         }
 
         
         
-        public IMessageContentPage AddPage(string topicId, IMessageContentPage page)
+        public void AddPage(string topicId, IMessageContentPage page)
         {
-            lock (_cache)
+            lock (_lockObject)
             {
                 if (!_cache.ContainsKey(topicId))
                 {
-                    _cache.Add(topicId, new TopicContentGroup(topicId));
+                    _cache.Add(topicId, new Dictionary<long, IMessageContentPage>());
                     _topicsAsList = _cache.Keys.ToList();
                 }
-                    
                 
-                var topicContentGroup = _cache[topicId];
+                var byTopic = _cache[topicId];
 
-                if (topicContentGroup.Dictionary.TryGetValue(page.PageId.Value, out var foundPage))
-                    return foundPage;
-                
-                topicContentGroup.Dictionary.Add(page.PageId.Value, page);
-                return page;
+                if (!byTopic.ContainsKey(page.PageId.Value))
+                    byTopic.Add(page.PageId.Value, page);
             }
         }
 
@@ -65,10 +54,10 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         public Dictionary<string, (int loadedPages, long contentSize)> GetMetrics()
         {
             var result = new Dictionary<string, (int loadedPages, long contentSize)>();
-            lock (_cache)
+            lock (_lockObject)
             {
-                foreach (var group in _cache.Values)
-                    result.Add(group.TopicId, (group.Dictionary.Count, group.Dictionary.Values.Sum(itm => itm.TotalContentSize)));
+                foreach (var (topicId, pagesByTopic) in _cache)
+                    result.Add(topicId, (pagesByTopic.Count, pagesByTopic.Values.Sum(itm => itm.TotalContentSize)));
             }
             return result;
         }
@@ -78,41 +67,64 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         {
 
             var result = new Dictionary<string, IReadOnlyList<long>>();
-            lock (_cache)
+            lock (_lockObject)
             {
-                foreach (var group in _cache.Values)
-                    result.Add(group.TopicId, group.Dictionary.Keys.ToList());
+                foreach (var (topicId, pagesByTopic) in _cache)
+                    result.Add(topicId, pagesByTopic.Keys.ToList());
             }
             return result;
         }
         
         public IReadOnlyList<MessagePageId> GetLoadedPages(string topicId)
         {
-            lock (_cache)
+            lock (_lockObject)
             {
-                if (_cache.ContainsKey(topicId))
-                    return _cache[topicId].Dictionary.Keys.Select(itm => new MessagePageId(itm)).ToList();
+                if (_cache.TryGetValue(topicId,out var pagesByTopic))
+                    return pagesByTopic.Keys.Select(itm => new MessagePageId(itm)).ToList();
             }
             return Array.Empty<MessagePageId>();
         }
 
         public void DisposePage(string topicId, in MessagePageId pageId)
         {
-            lock (_cache)
+            lock (_lockObject)
             {
-                if (!_cache.ContainsKey(topicId))
+                if (!_cache.TryGetValue(topicId, out var pagesByTopic)) 
                     return;
+                
+                if (pagesByTopic.ContainsKey(pageId.Value))
+                    pagesByTopic.Remove(pageId.Value);
 
-                var group = _cache[topicId];
-
-                if (group.Dictionary.ContainsKey(pageId.Value))
-                    group.Dictionary.Remove(pageId.Value);
             }
         }
 
         public IReadOnlyList<string> GetTopics()
         {
             return _topicsAsList;
+        }
+
+        public IReadOnlyList<WritableContentCachePage> GetWritablePagesHasMessagesToUpload(string topicId)
+        {
+            List<WritableContentCachePage> result = null;
+            lock (_cache)
+            {
+
+                if (_cache.TryGetValue(topicId, out var pagesByTopic))
+                {
+
+                    foreach (var messageContentPage in pagesByTopic.Values)
+                    {
+                        if (messageContentPage is not WritableContentCachePage writableContentCachePage) 
+                            continue;
+                        
+                        result ??= new List<WritableContentCachePage>();
+                        result.Add(writableContentCachePage);
+                    }
+
+                }
+
+                return (IReadOnlyList<WritableContentCachePage>)result ?? Array.Empty<WritableContentCachePage>();
+            }
         }
     }
 }

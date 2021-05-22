@@ -11,7 +11,7 @@ namespace MyServiceBus.Persistence.Domains
 {
     public static class MyServiceBusServicesBinder
     {
-        public static void BindMyServiceBusPersistenceServices(this IServiceCollection sr, AppGlobalFlags appGlobalFlags)
+        public static void BindMyServiceBusPersistenceServices(this IServiceCollection sr)
         {
             sr.AddSingleton<QueueSnapshotCache>();
             sr.AddSingleton<QueueSnapshotWriter>();
@@ -24,8 +24,10 @@ namespace MyServiceBus.Persistence.Domains
             sr.AddSingleton<RestorePageFromBlobOperation>();
             sr.AddSingleton<CompressPageBlobOperation>();
             sr.AddSingleton<SyncAndGcBlobOperations>();
+
+            sr.AddSingleton<ActivePagesCalculator>();
             
-            sr.AddSingleton(appGlobalFlags);
+            sr.AddSingleton<AppGlobalFlags>();
             
             sr.AddSingleton<IAppLogger>(new AppLogger());
             
@@ -34,10 +36,10 @@ namespace MyServiceBus.Persistence.Domains
             sr.AddSingleton<ServicesDisposer>();
             
             sr.AddSingleton<IndexByMinuteWriter>();
-            
-            sr.AddSingleton<PagesToCompressDetector>();
 
             sr.AddSingleton<MaxPersistedMessageIdByTopic>();
+
+            sr.AddSingleton<WritePositionsByTopic>();
         }
         
     }

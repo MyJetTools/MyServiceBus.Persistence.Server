@@ -31,9 +31,8 @@ namespace MyServiceBus.Persistence.Server
 
             services.AddMvc(o => { o.EnableEndpointRouting = false; });
 
-            var globalFlags = new AppGlobalFlags();
-            _services.BindAzureServices(Settings, globalFlags);
-            _services.BindMyServiceBusPersistenceServices(globalFlags);
+            _services.BindAzureServices(Settings);
+            _services.BindMyServiceBusPersistenceServices();
 
             services.AddSwaggerDocument(o => o.Title = "MyServiceBus-Persistence");
         }

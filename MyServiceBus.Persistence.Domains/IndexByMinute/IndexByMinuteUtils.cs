@@ -5,11 +5,9 @@ using MyServiceBus.Persistence.Grpc;
 namespace MyServiceBus.Persistence.Domains.IndexByMinute
 {
 
-    
-    
     public static class IndexByMinuteUtils
     {
-        private static readonly List<int> DayNoInYear = new List<int>();
+        private static readonly List<int> DayNoInYear = new ();
 
         private const int MinutesPerDay = 60 * 24;
         

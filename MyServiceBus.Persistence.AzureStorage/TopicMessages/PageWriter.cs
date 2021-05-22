@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using MyAzurePageBlobs;
 using MyAzurePageBlobs.DataBuilder.BinaryPackagesSequence;
@@ -16,82 +15,54 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
     
     public class PageWriter : IPageWriter, IAsyncDisposable
     {
-        
-        private static readonly Dictionary<string, long> WritePosition = new ();
 
-        
-        //ToDo - не имплементировано
-        public static long GetWritePosition(string topicId)
-        {
-            lock (WritePosition)
-            {
-                return WritePosition.TryGetValue(topicId, out var result) ? result : 0;
-            }
-        }
+        private readonly WritePositionMetric _writePositionMetric; 
 
-        public static void AppendWritePosition(string topicId, long writePosition)
-        {
-            lock (WritePosition)
-            {
-
-                if (WritePosition.ContainsKey(topicId))
-                    WritePosition[topicId] += writePosition;
-                else
-                    WritePosition.Add(topicId, writePosition);
-            }
-        }
-        
-        public static void ResetWritePosition(string topicId)
-        {
-            lock (WritePosition)
-            {
-
-                if (WritePosition.ContainsKey(topicId))
-                    WritePosition[topicId] += 0;
-                else
-                    WritePosition.Add(topicId, 0);
-            }
-        }
-        
-        public DateTime LastAccessTime { get; private set; } =DateTime.UtcNow;
+        private readonly Dictionary<long, MessageContentGrpcModel> _messagesInBlob = new();
         
         private readonly IAzurePageBlob _azurePageBlob;
         private readonly int _pagesReadingAmount;
         private BinaryPackagesSequenceBuilder _binaryPackagesSequenceBuilder;
 
-        public string TopicId { get; }
-        
         public MessagePageId PageId { get; }
 
-        public PageWriter(string topicId, MessagePageId pageId, IAzurePageBlob azurePageBlob, int pagesReadingAmount)
+        public PageWriter(MessagePageId pageId, IAzurePageBlob azurePageBlob, WritePositionMetric writePositionMetric, int pagesReadingAmount)
         {
             _azurePageBlob = azurePageBlob;
             _pagesReadingAmount = pagesReadingAmount;
-            TopicId = topicId;
             PageId = pageId;
+            _writePositionMetric = writePositionMetric;
         }
 
-        public async ValueTask SyncIfNeededAsync()
-        {
 
-            if (_assignedPage.MaxPageId == MaxMessageIdInBlob)
-                return;
+        private async Task UploadToBlobAsync(List<ReadOnlyMemory<byte>> serializedMessages, List<MessageContentGrpcModel> messages)
+        {
+            await _binaryPackagesSequenceBuilder.AppendAsync(serializedMessages);
+
+            foreach (var message in messages)
+            {
+                _messagesInBlob.Add(message.MessageId, message);
+            }
             
-            
-            var result = new List<ReadOnlyMemory<byte>>();
+        }
+
+
+        private async Task SynchronizeMessagesAsync(IReadOnlyList<MessageContentGrpcModel> messagesToUpload)
+        {
+            var serializedMessages = new List<ReadOnlyMemory<byte>>();
+            var grpcMessages = new List<MessageContentGrpcModel>();
 
             var size = 0;
-
-            var newMessages = _assignedPage.GetMessagesGreaterThen(MaxMessageIdInBlob);
             
-            foreach (var messageContent in newMessages)
+            foreach (var messageContent in messagesToUpload)
             {
-                
                 
                 var memoryStream = new MemoryStream();
                 ProtoBuf.Serializer.Serialize(memoryStream, messageContent);
                 var memory = memoryStream.GetBuffer();
-                result.Add(new ReadOnlyMemory<byte>(memory, 0, (int)memoryStream.Position));
+                serializedMessages.Add(new ReadOnlyMemory<byte>(memory, 0, (int)memoryStream.Position));
+                grpcMessages.Add(messageContent);
+                
                 
                 if (MaxMessageIdInBlob < messageContent.MessageId)
                     MaxMessageIdInBlob = messageContent.MessageId;
@@ -100,27 +71,32 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
                 if (size > 1024 * 1024 * 3)
                 {
-                    await _binaryPackagesSequenceBuilder.AppendAsync(result);
-                    result.Clear();
+                    await UploadToBlobAsync(serializedMessages, grpcMessages);
+                    serializedMessages.Clear();
+                    grpcMessages.Clear();
                     size = 0;
                 }
 
             }
 
-            if (result.Count > 0)
-                await _binaryPackagesSequenceBuilder.AppendAsync(result);
+            if (serializedMessages.Count > 0)
+                await UploadToBlobAsync(serializedMessages, grpcMessages);
             
-            
-            LastAccessTime = DateTime.UtcNow;
-
+            _writePositionMetric.Update(PageId, _binaryPackagesSequenceBuilder.Position);
         }
+        
 
-        public WritableContentCachePage GetAssignedPage()
+        public ValueTask SyncIfNeededAsync()
         {
-            return _assignedPage;
+            var newMessages = AssignedPage.GetMessagesToSynchronize();
+            
+            return newMessages.Count == 0 
+                ? new ValueTask() 
+                : new ValueTask(SynchronizeMessagesAsync(newMessages));
         }
 
-        private WritableContentCachePage _assignedPage;
+
+        public WritableContentCachePage AssignedPage { get; private set; }
 
 
         public async ValueTask<bool> BlobExistsAsync()
@@ -132,36 +108,40 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         public long MaxMessageIdInBlob { get; private set; }
 
 
-        public async ValueTask CreateAndAssignAsync(WritableContentCachePage page, AppGlobalFlags appGlobalFlags)
+        public async ValueTask CreateAndAssignAsync(AppGlobalFlags appGlobalFlags)
         {
             await _azurePageBlob.CreateIfNotExists();
-            await AssignPageAndInitialize(page, appGlobalFlags);
+            await AssignPageAndInitialize(appGlobalFlags);
         }
         
-        public async Task AssignPageAndInitialize(WritableContentCachePage page, AppGlobalFlags appGlobalFlags)
+        public async Task AssignPageAndInitialize(AppGlobalFlags appGlobalFlags)
         {
-            _assignedPage = page;
-            var items = await GetMessagesAsync(appGlobalFlags).ToListAsync();
-            _assignedPage.Add(items);
-
-            if (items.Count > 0)
-                MaxMessageIdInBlob = items.Max(itm => itm.MessageId);
-
+            await LoadMessagesAndInitBlobAsync(appGlobalFlags);
+            AssignedPage = new WritableContentCachePage(PageId);
+            AssignedPage.Init(_messagesInBlob.Values);
         }
 
-        private async IAsyncEnumerable<MessageContentGrpcModel> GetMessagesAsync(AppGlobalFlags appGlobalFlags)
+        private async Task LoadMessagesAndInitBlobAsync(AppGlobalFlags appGlobalFlags)
         {
             _binaryPackagesSequenceBuilder =
                 new BinaryPackagesSequenceBuilder(_azurePageBlob, _pagesReadingAmount, _pagesReadingAmount, 4096);
 
             await foreach (var frame in _binaryPackagesSequenceBuilder.InitAndReadAsync(_pagesReadingAmount))
             {
+                
                 if (appGlobalFlags.IsShuttingDown)
-                    yield break;
-
+                    break;
+                
                 var contentMessage = ProtoBuf.Serializer.Deserialize<MessageContentGrpcModel>(frame);
-                yield return contentMessage;
+                _messagesInBlob.Add(contentMessage.MessageId, contentMessage);
+
+                if (MaxMessageIdInBlob < contentMessage.MessageId)
+                    MaxMessageIdInBlob = contentMessage.MessageId;
+                
+                _writePositionMetric.Update(PageId, _binaryPackagesSequenceBuilder.Position);
             }
+            
+            
 
         }
 
@@ -170,10 +150,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             return SyncIfNeededAsync();
         }
 
-        public bool HasToSync()
-        {
-            return _assignedPage.MaxPageId > MaxMessageIdInBlob;
-        }
+        public int MessagesInBlobAmount => _messagesInBlob.Count;
     }
 
 }

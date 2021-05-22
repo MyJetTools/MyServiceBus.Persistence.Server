@@ -1,76 +1,134 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.MessagesContent;
-using MyServiceBus.Persistence.Domains.TopicsAndQueues;
+using MyServiceBus.Persistence.Domains.PersistenceOperations;
 
 namespace MyServiceBus.Persistence.Domains.BackgroundJobs
 {
     public class ActivePagesWarmerAndGc
     {
-        private readonly QueueSnapshotCache _queueSnapshotCache;
         private readonly MessagesContentCache _messagesContentCache;
         private readonly MessagesContentReader _messagesContentReader;
         private readonly IAppLogger _logger;
         private readonly IMessagesContentPersistentStorage _messagesContentPersistentStorage;
+        private readonly ActivePagesCalculator _activePagesCalculator;
+        private readonly TaskSchedulerByTopic _taskSchedulerByTopic;
         private readonly AppGlobalFlags _appGlobalFlags;
-        
-        
-        public readonly TimeSpan GcDelay = TimeSpan.FromSeconds(30);
+        private readonly CompressPageBlobOperation _compressPageBlobOperation;
 
-        public ActivePagesWarmerAndGc(QueueSnapshotCache queueSnapshotCache, MessagesContentCache messagesContentCache,
+        public ActivePagesWarmerAndGc(MessagesContentCache messagesContentCache,
             MessagesContentReader messagesContentReader, IAppLogger logger, IMessagesContentPersistentStorage messagesContentPersistentStorage,
-            AppGlobalFlags appGlobalFlags)
+            ActivePagesCalculator activePagesCalculator, TaskSchedulerByTopic taskSchedulerByTopic,
+            AppGlobalFlags appGlobalFlags, CompressPageBlobOperation compressPageBlobOperation)
         {
-            _queueSnapshotCache = queueSnapshotCache;
             _messagesContentCache = messagesContentCache;
             _messagesContentReader = messagesContentReader;
             _logger = logger;
             _messagesContentPersistentStorage = messagesContentPersistentStorage;
+            _activePagesCalculator = activePagesCalculator;
+            _taskSchedulerByTopic = taskSchedulerByTopic;
             _appGlobalFlags = appGlobalFlags;
+            _compressPageBlobOperation = compressPageBlobOperation;
         }
+        
+        private static readonly TimeSpan GcTimeout = TimeSpan.FromSeconds(30);
 
 
-        public async ValueTask CheckAndWarmItUpAsync()
+        public async ValueTask CheckAndWarmItUpOrGcAsync()
         {
-            
+
             if (!_appGlobalFlags.Initialized)
                 return;
-            
 
 
-            var (_, topicsAndQueues) = _queueSnapshotCache.Get();
+            var pages = _activePagesCalculator.GetActivePages();
 
-            foreach (var topicSnapshot in topicsAndQueues)
+            List<Task> tasks = null;
+
+            var now = DateTime.UtcNow;
+
+            foreach (var activePage in pages.Values)
             {
+
                 if (_appGlobalFlags.IsShuttingDown)
                     return;
-                
-                var activePages = topicSnapshot.GetActivePages();
 
-                var pagesInCache = _messagesContentCache.GetLoadedPages(topicSnapshot.TopicId);
-
-                foreach (var pageIdToWarmUp in pagesInCache.GetPagesToWarmUp(activePages))
+                foreach (var pageId in _activePagesCalculator.GetPagesToWarmUp(activePage))
                 {
-                    _logger.AddLog(LogProcess.PagesLoaderOrGc, topicSnapshot.TopicId, "Warming up the page", "PageNo:"+pageIdToWarmUp);
-                    
-                    await _messagesContentReader.TryGetPageAsync(topicSnapshot.TopicId, pageIdToWarmUp, "Warm Up");
+                    var task = _taskSchedulerByTopic.ExecuteTaskAsync(activePage.Snapshot.TopicId, pageId, "Warming Up",
+                        () => WarmUpThreadTopicSynchronizedAsync(activePage.Snapshot.TopicId, pageId));
+
+                    tasks ??= new List<Task>();
+                    tasks.Add(task);
                 }
 
-                foreach (var pageToGc in pagesInCache.GetPagesToGarbageCollect(activePages))
+
+                foreach (var pageToGc in _activePagesCalculator.GetPagesToGarbageCollect(activePage))
                 {
-                    var page = _messagesContentCache.TryGetPage(topicSnapshot.TopicId, pageToGc);
-                    
+
+                    var page = _messagesContentCache.TryGetPage(activePage.Snapshot.TopicId, pageToGc);
+
                     if (page == null)
                         continue;
                     
-                    if (DateTime.UtcNow  - page.LastAccessTime < GcDelay)
+                    if (now - page.LastAccessTime < GcTimeout)
                         continue;
+                    
+                    var task = _taskSchedulerByTopic.ExecuteTaskAsync(activePage.Snapshot.TopicId, pageToGc, "GC page",
+                        () => GcThreadTopicSynchronizedAsync(activePage.Snapshot.TopicId, pageToGc));
 
-                    await _messagesContentPersistentStorage.GcAsync(topicSnapshot.TopicId, pageToGc);
-
-                    _messagesContentCache.DisposePage(topicSnapshot.TopicId, pageToGc);
+                    tasks ??= new List<Task>();
+                    tasks.Add(task);
                 }
+
+            }
+
+            if (tasks != null)
+                await Task.WhenAll(tasks);
+
+        }
+
+
+
+        private async Task WarmUpThreadTopicSynchronizedAsync(string topicId, MessagePageId pageId)
+        {
+            _logger.AddLog(LogProcess.PagesLoaderOrGc, topicId,  "PageNo:"+pageId, "Warming up the page");
+            await _messagesContentReader.LoadPageIntoCacheTopicSynchronizedAsync(topicId, pageId);
+        }
+
+        private async Task GcThreadTopicSynchronizedAsync(string topicId, MessagePageId pageId)
+        {
+
+            var page = _messagesContentCache.TryGetPage(topicId, pageId);
+
+            if (page == null)
+                return;
+            
+            var gcResult = await _messagesContentPersistentStorage.TryToGcAsync(topicId, pageId);
+
+            if (gcResult.NotFound)
+            {
+                _logger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageNo:"+pageId, "Attempt to GC PageWriter which is not found. Disposing page from the Cache") ;
+                _messagesContentCache.DisposePage(topicId, pageId);
+                return;
+            }
+
+            if (gcResult.NotReadyToGc)
+            {
+                _logger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageNo:"+pageId, "Attempt to GC PageWriter which has not synced messages. Skipping the round") ;
+                return;
+            }
+
+            if (gcResult.DisposedPageWriter != null)
+            {
+                            
+                _logger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageNo:"+pageId, "PageWriter disposed Ok.. Disposing From Cache");
+
+                await _compressPageBlobOperation.ExecuteOperationThreadTopicSynchronizedAsync(topicId, pageId, gcResult.DisposedPageWriter.AssignedPage);
+                _messagesContentCache.DisposePage(topicId, pageId);
                 
+                _logger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageNo:"+pageId, "Page is disposed from Cache");
             }
         }
 

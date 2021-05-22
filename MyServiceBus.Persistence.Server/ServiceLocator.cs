@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DotNetCoreDecorators;
 using Microsoft.Extensions.DependencyInjection;
 using MyServiceBus.Persistence.AzureStorage;
+using MyServiceBus.Persistence.AzureStorage.TopicMessages;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
@@ -27,6 +28,9 @@ namespace MyServiceBus.Persistence.Server
         private static ActivePagesWarmerAndGc _activePagesWarmerAndGc;
 
         public static TaskSchedulerByTopic TaskSchedulerByTopic { get; private set; }
+        
+        
+        public static WritePositionsByTopic WritePositionsByTopic { get; private set; }
         
         
         public static MaxPersistedMessageIdByTopic MaxPersistedMessageIdByTopic { get; private set; }
@@ -59,7 +63,6 @@ namespace MyServiceBus.Persistence.Server
 
         public static IndexByMinuteWriter IndexByMinuteWriter { get; private set; }
         
-        public static PagesToCompressDetector PagesToCompressDetector { get; private set; }
         
         public static ILastCompressedPageStorage LastCompressedPageStorage { get; private set; }
         
@@ -94,6 +97,7 @@ namespace MyServiceBus.Persistence.Server
             QueueSnapshotCache = sp.GetRequiredService<QueueSnapshotCache>();
             MessagesContentCache = sp.GetRequiredService<MessagesContentCache>();
             MessagesContentReader = sp.GetRequiredService<MessagesContentReader>();
+            WritePositionsByTopic = sp.GetRequiredService<WritePositionsByTopic>();
 
             _activePagesWarmerAndGc = sp.GetRequiredService<ActivePagesWarmerAndGc>();
 
@@ -110,8 +114,7 @@ namespace MyServiceBus.Persistence.Server
             LegacyCompressedMessagesStorage = sp.GetRequiredService<ILegacyCompressedMessagesStorage>();
 
             MessagesContentPersistentStorage = sp.GetRequiredService<IMessagesContentPersistentStorage>();
-
-            PagesToCompressDetector = sp.GetRequiredService<PagesToCompressDetector>();
+            ((MessagesPersistentStorage)MessagesContentPersistentStorage).Inject(sp);
 
             LastCompressedPageStorage = sp.GetRequiredService<ILastCompressedPageStorage>();
 
@@ -126,9 +129,8 @@ namespace MyServiceBus.Persistence.Server
             Task.Run(() => InitTopicsAsync(sp));
 
             _taskTimerSyncQueues.Register("SyncQueuesSnapshotToStorage", _queueSnapshotWriter.ExecuteAsync);
-            _taskTimerSyncQueues.Register("ActiveMessagesWarmerAndGc", _activePagesWarmerAndGc.CheckAndWarmItUpAsync);
+            _taskTimerSyncQueues.Register("ActiveMessagesWarmerAndGc", _activePagesWarmerAndGc.CheckAndWarmItUpOrGcAsync);
             _taskTimerSyncQueues.Register("IndexByMinuteWriter", IndexByMinuteWriter.SaveMessagesToStorage);
-            _taskTimerSyncQueues.Register("PagesToCompressDetector", PagesToCompressDetector.TimerAsync);
             _taskTimerSyncQueues.Register("FlushLastCompressedPagesState", LastCompressedPageStorage.FlushAsync);
             _taskTimerSyncQueues.Register("Update prometheus", () =>
             {

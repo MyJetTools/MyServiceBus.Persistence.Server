@@ -84,34 +84,16 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
 
             var dt = DateTime.UtcNow;
 
-            var messagesCount = 0;
-            long minId = 0;
-            long maxId = 0;
-
-
             var pageWriter = await _messagesContentPersistentStorage.TryGetAsync(topicId, pageId);
 
-            var page = pageWriter.GetAssignedPage();
-
-            _messagesContentCache.AddPage(topicId, page);
-
-            messagesCount = page.Count;
-
-
-            var msgs = page.GetMessages();
-
-            if (msgs.Count > 0)
-            {
-                minId = msgs.Min(itm => itm.MessageId);
-                maxId = msgs.Max(itm => itm.MessageId);
-            }
-
+            _messagesContentCache.AddPage(topicId, pageWriter.AssignedPage);
 
             _appLogger.AddLog(LogProcess.PagesLoaderOrGc, topicId, logContext,
                 $"Restored page #{pageId} from UnCompressed source. Duration: {DateTime.UtcNow - dt}. Messages: " +
-                messagesCount + $" MinId: {minId}, MaxId: {maxId}");
+                pageWriter.AssignedPage.Count + $" MinId: {pageWriter.AssignedPage.MinMessageId}, MaxId: {pageWriter.AssignedPage.MaxMessageId}. " +
+                $"MinMax Difference: {pageWriter.AssignedPage.MaxMessageId - pageWriter.AssignedPage.MinMessageId + 1}");
 
-            return pageWriter.GetAssignedPage();
+            return pageWriter.AssignedPage;
         }
      
     }

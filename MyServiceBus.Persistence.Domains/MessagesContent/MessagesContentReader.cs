@@ -26,8 +26,34 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             _taskSchedulerByTopic = taskSchedulerByTopic;
             _restorePageFromBlobOperation = restorePageFromBlobOperation;
         }
-        
-        
+
+
+
+        public async Task<IMessageContentPage> LoadPageIntoCacheTopicSynchronizedAsync(string topicId, MessagePageId pageId)
+        {
+            var page = _messagesContentCache.TryGetPage(topicId, pageId);
+
+            if (page != null)
+                return page;
+            
+            return await _restorePageFromBlobOperation.TryRestoreFromCompressedPage(topicId, pageId) 
+                     ?? await _restorePageFromBlobOperation.TryRestoreFromUncompressedPage(topicId, pageId);
+            
+        }
+
+
+
+        public async ValueTask<IMessageContentPage> TryGetPageTopicThreadSynchronizedAsync(string topicId,
+            MessagePageId pageId)
+        {
+            var page = _messagesContentCache.TryGetPage(topicId, pageId);
+
+            if (page != null)
+                return page;
+
+            return await LoadPageIntoCacheTopicSynchronizedAsync(topicId, pageId);
+
+        }
         
 
         public async ValueTask<IMessageContentPage> TryGetPageAsync(string topicId, MessagePageId pageId, string reason)
@@ -41,10 +67,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             IMessageContentPage result = null;
 
 
-            await _taskSchedulerByTopic.ExecuteTaskAsync(topicId, "Getting page: " + pageId, async () =>
+            await _taskSchedulerByTopic.ExecuteTaskAsync(topicId, pageId, "Getting page: " + reason, async () =>
             {
-                result = await _restorePageFromBlobOperation.TryRestoreFromCompressedPage(topicId, pageId) 
-                         ?? await _restorePageFromBlobOperation.TryRestoreFromUncompressedPage(topicId, pageId);
+                result = await TryGetPageTopicThreadSynchronizedAsync(topicId, pageId);
             });
 
             return result;

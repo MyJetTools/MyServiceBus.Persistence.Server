@@ -15,13 +15,11 @@ namespace MyServiceBus.Persistence.Domains.IndexByMinute
         }
         
         private readonly Dictionary<string, List<MessageContentGrpcModel>> _rawMessagesQueue
-            = new Dictionary<string, List<MessageContentGrpcModel>>();
+            = new ();
 
         public void NewMessages(string topicId, IEnumerable<MessageContentGrpcModel> messages)
         {
-
-                _rawMessagesQueue.Enqueue(topicId, messages);    
-            
+            _rawMessagesQueue.Enqueue(topicId, messages);
         }
 
         private async Task TryToSaveAsync(string topicId, int year,

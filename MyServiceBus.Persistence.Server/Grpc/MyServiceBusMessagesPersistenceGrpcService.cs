@@ -53,8 +53,8 @@ namespace MyServiceBus.Persistence.Server.Grpc
                 var messagePageId = new MessagePageId(group.Key);
              
                  var storage = await ServiceLocator.MessagesContentPersistentStorage.GetOrCreateAsync(contract.TopicId, messagePageId);
-                 var page = storage.GetAssignedPage();
-                 page.Add(group);
+                 var page = storage.AssignedPage;
+                 page.NewMessages(group);
   
             }
 

@@ -22,6 +22,7 @@ interface IQueueRange{
 interface IPersistentOperation{
     name:string;
     topicId:string;
+    pageId: number,
     dur:string
 }
 

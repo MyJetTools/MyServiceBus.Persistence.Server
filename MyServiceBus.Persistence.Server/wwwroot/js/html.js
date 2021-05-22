@@ -44,7 +44,7 @@ var HtmlRenderer = /** @class */ (function () {
         var result = '<h1>' + header + '</h1><table class="table table-striped"><tr><th>Topic</th><th>Action</th></tr>';
         for (var _i = 0, activeOperations_1 = activeOperations; _i < activeOperations_1.length; _i++) {
             var op = activeOperations_1[_i];
-            result += '<tr><td style="font-size:10px">' + op.topicId + '<div>' + op.dur + '</div></td><td style="font-size:10px">' + op.name + '</td></tr>';
+            result += '<tr><td style="font-size:10px">' + op.topicId + '<div>' + op.pageId + '</div></td><td style="font-size:10px">' + op.name + '<div>' + op.dur + '</div></td></tr>';
         }
         return result + "</table>";
     };

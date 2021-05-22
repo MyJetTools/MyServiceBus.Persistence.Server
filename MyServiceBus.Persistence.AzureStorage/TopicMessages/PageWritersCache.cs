@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.MessagesContent;
-using MyServiceBus.Persistence.Domains.MessagesContent.Page;
+using MyServiceBus.Persistence.Domains.Metrics;
 
 namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 {
@@ -18,19 +17,21 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
         private readonly Func<(string topicId, MessagePageId pageId), IAzurePageBlob> _getMessagesBlob;
         private readonly AppGlobalFlags _appGlobalFlags;
+        private readonly WritePositionMetric _writePositionMetric;
 
 
         private readonly string _topicId;
         public PageWritersCache(string topicId, Func<(string topicId, MessagePageId pageId),IAzurePageBlob> getMessagesBlob, 
-            AppGlobalFlags appGlobalFlags)
+            AppGlobalFlags appGlobalFlags, WritePositionMetric writePositionMetric)
         {
             _topicId = topicId;
             _getMessagesBlob = getMessagesBlob;
             _appGlobalFlags = appGlobalFlags;
+            _writePositionMetric = writePositionMetric;
         }
 
         
-        private PageWriter TryGet(MessagePageId pageId)
+        public PageWriter TryGetOrNull(MessagePageId pageId)
         {
             return _pageWriters.TryGetValue(pageId.Value, out var pageWriters)
                 ? pageWriters
@@ -38,49 +39,43 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
                 
         }
 
-
         public async ValueTask<PageWriter> GetOrCreateAsync(MessagePageId pageId)
         {
-            var writer = TryGet(pageId);
+            var writer = TryGetOrNull(pageId);
 
             if (writer != null)
                 return writer;
 
-            writer = new PageWriter(_topicId, pageId, _getMessagesBlob((_topicId, pageId)), 16384);
+            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _writePositionMetric,16384);
 
             if (await writer.BlobExistsAsync())
-                await writer.AssignPageAndInitialize(new WritableContentCachePage(pageId), _appGlobalFlags);
+                await writer.AssignPageAndInitialize(_appGlobalFlags);
             else
-                await writer.CreateAndAssignAsync(new WritableContentCachePage(pageId), _appGlobalFlags);
+                await writer.CreateAndAssignAsync( _appGlobalFlags);
             
             _pageWriters.Add(pageId.Value, writer);
 
             return writer;
         }
-        
-        public async ValueTask<PageWriter> TryGetAsync(MessagePageId pageId, Func<WritableContentCachePage> createCachePage)
+
+
+        public async ValueTask<PageWriter> TryGetAsync(MessagePageId pageId)
         {
-            var writer = TryGet(pageId);
+            var writer = TryGetOrNull(pageId);
 
             if (writer != null)
                 return writer;
 
-            writer = new PageWriter(_topicId, pageId, _getMessagesBlob((_topicId, pageId)), 16384);
+            writer = new PageWriter(pageId, _getMessagesBlob((_topicId, pageId)), _writePositionMetric,16384);
 
             if (!await writer.BlobExistsAsync())
                 return null;
   
-            await writer.AssignPageAndInitialize(createCachePage(), _appGlobalFlags);
+            await writer.AssignPageAndInitialize(_appGlobalFlags);
             
             _pageWriters.Add(pageId.Value, writer);
 
             return writer;
-        }
-
-
-        public IEnumerable<PageWriter> GetPageWritersWeHaveToSync()
-        {
-            return _pageWriters.Values.Where(pageWriter => pageWriter.HasToSync());
         }
         
         public PageWriter Remove(MessagePageId pageId)

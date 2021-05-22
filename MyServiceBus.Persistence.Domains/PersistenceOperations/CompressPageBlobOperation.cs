@@ -23,7 +23,7 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
         }
     
 
-        public async Task ExecuteOperationAsync(string topicId, MessagePageId pageId, IMessageContentPage messageContentPage)
+        public async Task ExecuteOperationThreadTopicSynchronizedAsync(string topicId, MessagePageId pageId, IMessageContentPage messageContentPage)
         {
             var logContext = "Page: " + pageId.Value;
             if (await _compressedMessagesStorage.HasCompressedPageAsync(topicId, pageId))

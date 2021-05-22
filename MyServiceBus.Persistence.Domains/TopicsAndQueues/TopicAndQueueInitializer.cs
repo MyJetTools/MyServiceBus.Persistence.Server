@@ -65,7 +65,7 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
             {
                 var pageId = MessagesContentPagesUtils.GetPageId(topicAndQueuesSnapshot.MessageId);
 
-                var task = _schedulerByTopic.ExecuteTaskAsync(topicAndQueuesSnapshot.TopicId, "Init: "+pageId, async () =>
+                var task = _schedulerByTopic.ExecuteTaskAsync(topicAndQueuesSnapshot.TopicId, pageId, "Init", async () =>
                 {
                     await _restorePageFromBlobOperation.TryRestoreFromUncompressedPage(topicAndQueuesSnapshot.TopicId, pageId);
                 });

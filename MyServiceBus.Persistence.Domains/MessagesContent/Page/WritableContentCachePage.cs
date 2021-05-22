@@ -10,9 +10,13 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         private readonly ReaderWriterLockSlim _readerWriterLockSlim = new ();
 
         private readonly MessagesContentDictionary _messages = new ();
+
+        private List<MessageContentGrpcModel> _messagesToSynchronize = new();
+
+
+        public long MinMessageId => _messages.MinMessageId;
+        public long MaxMessageId => _messages.MaxMessageId;
         
-        
-        public long MaxPageId { get; private set; }
 
         public WritableContentCachePage(MessagePageId pageId)
         {
@@ -26,7 +30,16 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             _messages.Init(initMessages);
         }
 
-        public void Add(IEnumerable<MessageContentGrpcModel> messagesToAdd)
+
+
+        private void SyncLastAccess()
+        {
+            LastAccessTime = DateTime.UtcNow;
+            Count = _messages.Count;
+            NotSynchronizedCount = _messagesToSynchronize.Count;
+        }
+
+        public void NewMessages(IEnumerable<MessageContentGrpcModel> messagesToAdd)
         {
             _readerWriterLockSlim.EnterWriteLock();
             try
@@ -34,39 +47,67 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                 foreach (var grpcModel in messagesToAdd)
                 {
                     _messages.AddOrUpdate(grpcModel);
-
-                    if (MaxPageId < grpcModel.MessageId)
-                        MaxPageId = grpcModel.MessageId;
+                    _messagesToSynchronize.Add(grpcModel);
                 }
 
             }
             finally
             {
-                LastAccessTime = DateTime.UtcNow;
-                Count = _messages.Count;
+                SyncLastAccess();
+                _readerWriterLockSlim.ExitWriteLock();
+            }
+        }
+
+
+
+        public IReadOnlyList<MessageContentGrpcModel> GetMessagesToSynchronize()
+        {
+            _readerWriterLockSlim.EnterWriteLock();
+
+            try
+            {
+                if (_messagesToSynchronize.Count == 0)
+                    return Array.Empty<MessageContentGrpcModel>();
+
+                var result = _messagesToSynchronize;
+                _messagesToSynchronize = new List<MessageContentGrpcModel>();
+                return result;
+            }
+            finally
+            {
+                _readerWriterLockSlim.ExitWriteLock();
+            }
+            
+        }
+        
+        
+        
+        public void Init(IEnumerable<MessageContentGrpcModel> messagesToAdd)
+        {
+            _readerWriterLockSlim.EnterWriteLock();
+            try
+            {
+                foreach (var grpcModel in messagesToAdd)
+                {
+                    _messages.AddOrUpdate(grpcModel);
+                }
+
+            }
+            finally
+            {
+                SyncLastAccess();
                 _readerWriterLockSlim.ExitWriteLock();
             }
         }
 
         public DateTime LastAccessTime { get; private set; } =DateTime.UtcNow;
         public int Count { get; private set; }
+        
+        public int NotSynchronizedCount { get; private set; }
+        
         public long TotalContentSize => _messages.TotalContentSize;
 
-        
-        public IReadOnlyList<MessageContentGrpcModel> GetMessagesGreaterThen(long messageId)
-        {
-            _readerWriterLockSlim.EnterReadLock();
-            try
-            {
-                return _messages.GetMessagesGreaterThen(messageId);
-
-            }
-            finally
-            {
-                _readerWriterLockSlim.ExitReadLock();
-            }
-        }
-
+  
         public IReadOnlyList<MessageContentGrpcModel> GetMessages()
         {
             return GetMessagesAsList();
@@ -114,6 +155,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             result._messages.Init(messageContent.GetMessages());
             return result;
         }
+
+
 
 
 

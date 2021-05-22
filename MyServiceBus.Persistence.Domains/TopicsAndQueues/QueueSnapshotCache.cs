@@ -14,6 +14,8 @@ namespace MyServiceBus.Persistence.Domains.TopicsAndQueues
 
         private long _snapshotId;
 
+
+
         public (long SnapshotId, IReadOnlyList<TopicAndQueuesSnapshotGrpcModel> Cache) Get()
         {
             

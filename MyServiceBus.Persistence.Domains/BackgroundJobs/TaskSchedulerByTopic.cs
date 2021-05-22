@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MyServiceBus.Persistence.Domains.MessagesContent;
 
 namespace MyServiceBus.Persistence.Domains.BackgroundJobs
 {
@@ -10,6 +11,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
     public interface ITopicTask
     {
         string TopicId { get; }
+        MessagePageId MessagePageId { get; }
         string Name { get; }
         
         bool Active { get; }
@@ -25,6 +27,7 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
         
         public string Name { get; set; }
         public bool Active { get; set;}
+        public MessagePageId MessagePageId { get; set; }
         public DateTime Created { get; } = DateTime.UtcNow;
 
         public readonly TaskCompletionSource TaskCompletionSource = new ();
@@ -85,14 +88,15 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
             }
         }
 
-        public Task ExecuteTaskAsync(string topicId, string name, Func<Task> callback)
+        public Task ExecuteTaskAsync(string topicId, MessagePageId messagePageId, string name, Func<Task> callback)
         {
 
             var task = new TopicTask
             {
                 Name = name,
                 Callback = callback,
-                TopicId = topicId
+                TopicId = topicId,
+                MessagePageId = messagePageId 
             };
 
             lock (_lockObject)

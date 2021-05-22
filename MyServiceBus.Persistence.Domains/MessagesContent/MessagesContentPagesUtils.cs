@@ -36,6 +36,12 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         }
 
 
+        public static MessagePageId CreateFromMessageId(long messageId)
+        {
+            return MessagesContentPagesUtils.GetPageId(messageId);
+        }
+
+
         
     }
     

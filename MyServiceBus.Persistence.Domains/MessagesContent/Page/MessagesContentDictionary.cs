@@ -13,20 +13,49 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         
         public void AddOrUpdate(MessageContentGrpcModel model)
         {
-            
-            if (_messages.ContainsKey(model.MessageId))
-            {
-                var oldModel = _messages[model.MessageId];
-                TotalContentSize -= oldModel.Data.Length;
-                _messages[model.MessageId] = model;
-                TotalContentSize += model.Data.Length;
-                return;
-            }
-            
-            TotalContentSize += model.Data.Length;
-            _messages.Add(model.MessageId, model);
 
-            _messagesAsList = null;
+            try
+            {
+                if (_messages.ContainsKey(model.MessageId))
+                {
+                    var oldModel = _messages[model.MessageId];
+                    TotalContentSize -= oldModel.Data.Length;
+                    _messages[model.MessageId] = model;
+                    TotalContentSize += model.Data.Length;
+                    return;
+                }
+                
+                TotalContentSize += model.Data.Length;
+                _messages.Add(model.MessageId, model);
+
+                _messagesAsList = null;
+            }
+            finally
+            {
+
+                if (MaxMessageId == -1)
+                {
+                    MaxMessageId = model.MessageId;
+                }
+                else
+                {
+                    if (MaxMessageId < model.MessageId)
+                        MaxMessageId = model.MessageId;
+                }
+                
+                
+                if (MinMessageId == -1)
+                {
+                    MinMessageId = model.MessageId;
+                }
+                else
+                {
+                    if (MinMessageId > model.MessageId)
+                        MinMessageId = model.MessageId;
+                }
+                
+            }
+    
         }
 
         public MessageContentGrpcModel TryGetOrNull(long messageId)
@@ -59,13 +88,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                 AddOrUpdate(grpcModel);
         }
 
-
-        public IReadOnlyList<MessageContentGrpcModel> GetMessagesGreaterThen(long messageId)
-        {
-            //ToDo - Optimize with Binary Search
-            return _messages.Values.Where(itm => itm.MessageId > messageId).ToList();
-        }
-
+        public long MinMessageId { get; private set; } = -1;
+        
+        public long MaxMessageId { get; private set; } = -1;
 
 
         public  (IReadOnlyList<long> holes, int count)  TestIfThereAreHoles(long pageId)

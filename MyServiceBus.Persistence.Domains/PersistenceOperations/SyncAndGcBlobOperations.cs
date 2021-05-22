@@ -33,19 +33,18 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
 
             var topics = _messagesContentCache.GetTopics();
 
-            foreach (var topic in topics)
+            foreach (var topicId in topics)
             {
-                await _taskSchedulerByTopic.ExecuteTaskAsync(topic, "Sync blobs", async ()=>
+                foreach (var page in _messagesContentCache.GetWritablePagesHasMessagesToUpload(topicId))
                 {
+                    await _taskSchedulerByTopic.ExecuteTaskAsync(topicId, page.PageId, "Upload new messages", async ()=>
+                    {
+                        var messageId =  await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
                     
-                    var messageId =  await _messagesContentPersistentStorage.SyncAsync(topic);
-                    
-                    if (messageId>0)
-                        _maxPersistedMessageIdByTopic.Update(topic, messageId);
-                    
-                    
-                });
-    
+                        if (messageId>0)
+                            _maxPersistedMessageIdByTopic.Update(topicId, messageId);
+                    });
+                }
             }
 
         }

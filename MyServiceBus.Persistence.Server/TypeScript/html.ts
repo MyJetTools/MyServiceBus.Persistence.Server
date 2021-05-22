@@ -63,7 +63,7 @@ class HtmlRenderer
         let result = '<h1>'+header+'</h1><table class="table table-striped"><tr><th>Topic</th><th>Action</th></tr>';
         
         for (let op of activeOperations){
-            result +='<tr><td style="font-size:10px">'+op.topicId+'<div>'+op.dur+'</div></td><td style="font-size:10px">'+op.name+'</td></tr>';
+            result +='<tr><td style="font-size:10px">'+op.topicId+'<div>'+op.pageId+'</div></td><td style="font-size:10px">'+op.name+'<div>'+op.dur+'</div></td></tr>';
         }
         
         return result+"</table>";

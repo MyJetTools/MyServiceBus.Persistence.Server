@@ -6,7 +6,6 @@ using MyServiceBus.Persistence.AzureStorage.CompressedMessages;
 using MyServiceBus.Persistence.AzureStorage.IndexByMinute;
 using MyServiceBus.Persistence.AzureStorage.QueueSnapshot;
 using MyServiceBus.Persistence.AzureStorage.TopicMessages;
-using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.IndexByMinute;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContentCompressed;
@@ -29,7 +28,7 @@ namespace MyServiceBus.Persistence.AzureStorage
         private const string FileMask = "0000000000000000000";
 
 
-        public static void BindMessagesPersistentStorage(this IServiceCollection sc, CloudStorageAccount cloudStorageAccount, AppGlobalFlags appGlobalFlags)
+        public static void BindMessagesPersistentStorage(this IServiceCollection sc, CloudStorageAccount cloudStorageAccount)
         {
 
             
@@ -37,7 +36,7 @@ namespace MyServiceBus.Persistence.AzureStorage
             {
                 var fileName = parameters.pageId.Value.ToString(FileMask);
                 return new MyAzurePageBlob(cloudStorageAccount, parameters.topicId, fileName);
-            }, appGlobalFlags));
+            }));
             
             sc.AddSingleton<ICompressedMessagesStorage>(new CompressedMessagesStorage(parameters =>
             {

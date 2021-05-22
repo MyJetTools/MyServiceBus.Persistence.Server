@@ -7,11 +7,25 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
 
     public interface IPageWriter
     {
-        WritableContentCachePage GetAssignedPage();
+        WritableContentCachePage AssignedPage { get; }
         long MaxMessageIdInBlob { get; }
         
         MessagePageId PageId { get; }
+        
+        int MessagesInBlobAmount { get; }
 
+    }
+
+
+    public struct GcWriterResult
+    {
+        
+        public bool NotReadyToGc { get; set; }
+        
+        public bool NotFound { get; set; }
+        
+        public IPageWriter DisposedPageWriter { get; set; }
+        
     }
     
     public interface IMessagesContentPersistentStorage
@@ -22,10 +36,11 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         
         ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId);
 
-        Task<long> SyncAsync(string topicId);
+        Task<long> SyncAsync(string topicId, MessagePageId pageId);
 
-        Task GcAsync(string topicId, MessagePageId pageId);
+        ValueTask<GcWriterResult> TryToGcAsync(string topicId, MessagePageId pageId);
     }
+    
 
     
 }

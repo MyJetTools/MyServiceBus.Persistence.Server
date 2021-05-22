@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using MyServiceBus.Persistence.AzureStorage.TopicMessages;
 using MyServiceBus.Persistence.Domains.TopicsAndQueues;
 using MyServiceBus.Persistence.Grpc;
 
@@ -35,6 +34,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 {
                     topicId = itm.TopicId,
                     name = itm.Name,
+                    pageId = itm.MessagePageId.Value,
                     dur = (now - itm.Created).ToString()
                 }),
                 
@@ -43,6 +43,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                     {
                         topicId = itm.TopicId,
                         name = itm.Name,
+                        pageId = itm.MessagePageId.Value,
                         dur = (now - itm.Created).ToString()
                     }),
                 
@@ -56,7 +57,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                     return new
                     {
                         topicId = itm.Key,
-                        writePosition = PageWriter.GetWritePosition(itm.Key),
+                        writePosition = ServiceLocator.WritePositionsByTopic.GetWritePositionMetric(itm.Key).Position,
                         messageId = snapshot?.MessageId ?? -1,
                         savedMessageId = ServiceLocator.MaxPersistedMessageIdByTopic.GetOrDefault(itm.Key),
                         pages = itm.Value.OrderBy(pageId => pageId),

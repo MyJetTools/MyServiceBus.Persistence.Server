@@ -12,7 +12,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
     public class CacheCommandsController : Controller
     {
         [HttpPost("[Controller]/Compress")]
-        public async Task<CompressPageResult> CompressAsync([FromForm]string topicId, [FromForm]long pageId)
+        public async Task<CompressPageResult> CompressAsync([FromForm] string topicId, [FromForm] long pageId)
         {
 
             var snapshot = ServiceLocator.QueueSnapshotCache.Get();
@@ -27,7 +27,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
 
 
             var messagePageId = new MessagePageId(pageId);
-            
+
             if (!ServiceLocator.CompressedMessagesUtils.PageCanBeCompressed(topicId, messagePageId))
             {
                 return new CompressPageResult
@@ -36,17 +36,20 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 };
             }
 
-            await ServiceLocator.TaskSchedulerByTopic.ExecuteTaskAsync(topicId,  "Compressing page by REST API request",
+            await ServiceLocator.TaskSchedulerByTopic.ExecuteTaskAsync(topicId, messagePageId,
+                "Compressing page by REST API request",
                 async () =>
                 {
 
                     var page = ServiceLocator.MessagesContentCache.TryGetPage(topicId, messagePageId);
-                    
+
                     if (page == null)
-                       await ServiceLocator.MessagesContentReader.TryGetPageAsync(topicId, messagePageId, "API-Request");
-                    
+                        await ServiceLocator.MessagesContentReader.TryGetPageTopicThreadSynchronizedAsync(topicId,
+                            messagePageId);
+
                     if (page != null)
-                        await ServiceLocator.CompressPageBlobOperation.ExecuteOperationAsync(topicId, messagePageId, page);
+                        await ServiceLocator.CompressPageBlobOperation.ExecuteOperationThreadTopicSynchronizedAsync(
+                            topicId, messagePageId, page);
 
                 });
 
@@ -55,7 +58,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 Result = "Page is compressed"
             };
         }
-        
+
         [HttpGet("[Controller]/Message")]
         public async Task<MessageContentModel> GetMessageAsync([FromQuery]string topicId, [FromQuery]long messageId)
         {

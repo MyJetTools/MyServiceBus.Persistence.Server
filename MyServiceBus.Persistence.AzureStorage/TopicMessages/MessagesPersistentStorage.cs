@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using MyAzurePageBlobs;
 using MyServiceBus.Persistence.Domains;
 using MyServiceBus.Persistence.Domains.MessagesContent;
@@ -9,18 +10,19 @@ using MyServiceBus.Persistence.Domains.Metrics;
 namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 {
 
-
     public class MessagesPersistentStorage : IMessagesContentPersistentStorage
     {
 
         private readonly Func<(string topicId, MessagePageId pageId), IAzurePageBlob> _getMessagesBlob;
-        private readonly AppGlobalFlags _appGlobalFlags;
 
         private readonly Dictionary<string, PageWritersCache> _pageWritersCacheByTopic = new ();
 
-        private object _lockObject = new();
+        private readonly object _lockObject = new();
 
 
+        private WritePositionsByTopic _writePositionsByTopic;
+        private AppGlobalFlags _appGlobalFlags;
+        
         private PageWritersCache GetOrCreatePageWritersCache(string topicId)
         {
             lock (_lockObject)
@@ -29,7 +31,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
                 if (_pageWritersCacheByTopic.TryGetValue(topicId, out var result))
                     return result;
 
-                result = new PageWritersCache(topicId, _getMessagesBlob, _appGlobalFlags);
+                result = new PageWritersCache(topicId, _getMessagesBlob, _appGlobalFlags, _writePositionsByTopic.GetWritePositionMetric(topicId));
                 
                 _pageWritersCacheByTopic.Add(topicId, result);
 
@@ -38,10 +40,16 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             
         }
 
-        public MessagesPersistentStorage(Func<(string topicId, MessagePageId pageId),IAzurePageBlob> getMessagesBlob, AppGlobalFlags appGlobalFlags)
+        public MessagesPersistentStorage(Func<(string topicId, MessagePageId pageId),IAzurePageBlob> getMessagesBlob)
         {
             _getMessagesBlob = getMessagesBlob;
-            _appGlobalFlags = appGlobalFlags;
+   
+        }
+
+        public void Inject(IServiceProvider sp)
+        {
+            _writePositionsByTopic = sp.GetRequiredService<WritePositionsByTopic>();
+            _appGlobalFlags = sp.GetRequiredService<AppGlobalFlags>();
         }
 
         public async Task DeleteNonCompressedPageAsync(string topicId, MessagePageId pageId)
@@ -66,64 +74,62 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
 
-        private IReadOnlyList<PageWriter> GetPageWriterReadyToSync(string topicId)
+        private PageWriter TryGet(string topicId, MessagePageId pageId)
         {
-            List<PageWriter> result = null;
+            lock (_lockObject)
+            {
+                return _pageWritersCacheByTopic.TryGetValue(topicId, out var pageWriter) ? pageWriter.TryGetOrNull(pageId) : null;
+            }
+        }
+
+
+        public async Task<long> SyncAsync(string topicId, MessagePageId pageId)
+        {
+            var pageToExecute = TryGet(topicId, pageId);
+
+            if (pageToExecute == null)
+                return -1;
+
+            await pageToExecute.SyncIfNeededAsync();
+
+            return pageToExecute.MaxMessageIdInBlob;
+        }
+
+
+
+        public async ValueTask<GcWriterResult> TryToGcAsync(string topicId, MessagePageId pageId)
+        {
+            PageWriter result;
 
             lock (_lockObject)
             {
                 if (!_pageWritersCacheByTopic.ContainsKey(topicId))
-                    return null;
+                    return new GcWriterResult
+                    {
+                        NotFound = true
+                    };
 
-                foreach (var pageWriter in _pageWritersCacheByTopic[topicId].GetPageWritersWeHaveToSync())
+                result = _pageWritersCacheByTopic[topicId].TryGetOrNull(pageId);
+            }
+
+            if (result == null)
+                return new GcWriterResult
                 {
-                    result ??= new List<PageWriter>();
-                    result.Add(pageWriter);
-                }
-            }
+                    NotFound = true
+                };
 
-            return result;
-        }
+            if (result.AssignedPage.NotSynchronizedCount > 0)
+                return new GcWriterResult
+                {
+                    NotReadyToGc = true
+                };
 
+            await result.DisposeAsync();
 
-        public async Task<long> SyncAsync(string topicId)
-        {
-            var pagesToSync = GetPageWriterReadyToSync(topicId);
-            
-            if (pagesToSync == null)
-                return -1;
-            
-            long result = -1;
-            
-            foreach (var pageWriter in pagesToSync)
+            return new GcWriterResult
             {
-               await pageWriter.SyncIfNeededAsync();
-               
-               if (result<pageWriter.MaxMessageIdInBlob)
-                    result = pageWriter.MaxMessageIdInBlob;
-            }
-
-            return result;
-        }
-
-
-        private PageWriter GcWriter(string topicId, MessagePageId pageId)
-        {
-            lock (_lockObject)
-            {
-                if (_pageWritersCacheByTopic.ContainsKey(topicId))
-                    return _pageWritersCacheByTopic[topicId].Remove(pageId);
-            }
-
-            return null;
-        }
-
-        public async Task GcAsync(string topicId, MessagePageId pageId)
-        {
-            var writer = GcWriter(topicId, pageId);
-
-            if (writer != null)
-                await writer.DisposeAsync();
+                DisposedPageWriter = result
+            };
         }
     }
 }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MyServiceBus.Persistence.Domains.IndexByMinute
@@ -8,6 +7,5 @@ namespace MyServiceBus.Persistence.Domains.IndexByMinute
         ValueTask SaveMinuteIndexAsync(string topicId, int year, int minute, long messageId);
 
         ValueTask<long> GetMessageIdAsync(string topicId, int year,  int minuteWithinTheYear);
-
     }
 }
