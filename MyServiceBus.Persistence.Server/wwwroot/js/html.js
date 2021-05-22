@@ -27,6 +27,9 @@ var HtmlRenderer = /** @class */ (function () {
                 else {
                     badges += '<span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span>';
                 }
+                badges += '<div><div class="progress">' +
+                    '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.percent + '%</div>';
+                '</div>`</div>';
             }
             var activePagesBadges = '';
             for (var _c = 0, _d = topic.activePages; _c < _d.length; _c++) {

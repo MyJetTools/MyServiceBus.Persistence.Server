@@ -27,13 +27,16 @@ class HtmlRenderer
         for (let topic of topics){
             
             let badges = '';
-            for (let loadedPage of topic.loadedPages){
-                if (loadedPage.hasSkipped){
-                    badges += '<span class="badge badge-danger" style="margin-left: 5px">'+loadedPage.pageId+'</span>';    
+            for (let loadedPage of topic.loadedPages) {
+                if (loadedPage.hasSkipped) {
+                    badges += '<span class="badge badge-danger" style="margin-left: 5px">' + loadedPage.pageId + '</span>';
+                } else {
+                    badges += '<span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span>';
                 }
-                else{
-                    badges += '<span class="badge badge-success" style="margin-left: 5px">'+loadedPage.pageId+'</span>';
-                }
+
+                badges += '<div><div class="progress">' +
+                    '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.percent + '%</div>'
+                '</div>`</div>';
             }
 
             let activePagesBadges = '';
@@ -42,6 +45,7 @@ class HtmlRenderer
             }
             
             let queuesContent = this.renderQueuesTableContent(topic.queues);
+            
             
             result += '<tr style="font-size: 10px">' +
                 '<td>'+topic.topicId+'<div>WritePos: '+topic.writePosition+'</div></td>' +

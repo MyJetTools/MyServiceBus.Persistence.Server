@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 using MyServiceBus.Persistence.Domains.TopicsAndQueues;
 using MyServiceBus.Persistence.Grpc;
 
@@ -66,7 +67,8 @@ namespace MyServiceBus.Persistence.Server.Controllers
                             .Select(page => new
                             {
                                 pageId = page.PageId.Value,
-                                hasSkipped = page.HasSkippedId
+                                hasSkipped = page.HasSkippedId,
+                                percent = page.Percent()
                             }),
                         activePages = (snapshot?.GetActivePages()
                                 .Select(messagePageId => messagePageId.Value) ?? Array.Empty<long>())

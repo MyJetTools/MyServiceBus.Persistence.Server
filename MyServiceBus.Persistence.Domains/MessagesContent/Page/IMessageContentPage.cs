@@ -27,10 +27,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
     public static class MessageContentPageExtensions
     {
-        public static bool HasAllMessages(this IMessageContentPage page)
-        {
-            return page.Count == 100000;
-        }
 
 
         public static CompressedPage GetCompressedPage(this IMessageContentPage page)
@@ -38,6 +34,11 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             return new (page.PageId, page.GetMessages());
         }
 
+
+        public static int Percent(this IMessageContentPage page)
+        {
+            return page.Count / 1000;
+        }
     }
     
 }

@@ -12,6 +12,7 @@ interface ITopicInfo{
 interface ILoadedPage{
     pageId: number,
     hasSkipped: boolean
+    percent: number
 }
 
 interface ITopicQueue{
