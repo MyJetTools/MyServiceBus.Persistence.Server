@@ -42,8 +42,11 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         public static bool HasSkipped(this IMessageContentPage page)
         {
-            return page.MaxMessageId - page.MinMessageId >= page.Count;
+            var firstMessageId = page.PageId.Value * 100000;
+            
+            return page.MaxMessageId - firstMessageId >= page.Count;
         }
+
     }
     
 }

@@ -9,7 +9,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
     [ApiController]
     public class DebugController : Controller
     {
-        [HttpGet]
+        [HttpGet("/Debug/Page")]
         public async ValueTask<IActionResult> Index([Required][FromQuery]string topicId, [Required][FromQuery]long pageId)
         {
 
@@ -37,6 +37,8 @@ namespace MyServiceBus.Persistence.Server.Controllers
             {
                 page.MinMessageId,
                 page.MaxMessageId,
+                page.Count,
+                MaxMinusMun = page.MaxMessageId - page.MinMessageId,
                 hasSkipped = page.HasSkipped()
             };
 
