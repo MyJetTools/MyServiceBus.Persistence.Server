@@ -37,8 +37,8 @@ class HtmlRenderer
                 badges += '<div>' +
                     '<div class="progress">' +
                     '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.count + '</div>'
-                    '</div>' +
-                   '</div>';
+                '</div>' +
+                '</div>';
             }
 
             let activePagesBadges = '';
@@ -53,7 +53,10 @@ class HtmlRenderer
                 '<td>'+topic.topicId+'<div>WritePos: '+topic.writePosition+'</div>' +
                 '<div>Active:</div>'+activePagesBadges+'<hr/><div>Loaded:</div>'+badges+'</td>' +
                 '<td>'+queuesContent+'</td>' +
-                '<td><div>Current Id:'+topic.messageId+'</div><div>Last Saved:'+topic.savedMessageId+'</div></td>' +
+                '<td><div>Current Id:'+topic.messageId+'</div><div>Last Saved:'+topic.savedMessageId+'</div><div>Last Save Chunk:'+topic.lastSaveChunk+'</div>' +
+                '<div>Last Save Duration:'+topic.lastSaveDur+'</div>' +
+                '<div>Saved ago:'+topic.lastSaveMoment+'</div>' +
+                '</td>' +
                 '</tr>'
         }
         

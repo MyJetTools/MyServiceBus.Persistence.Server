@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 
@@ -11,6 +12,10 @@ namespace MyServiceBus.Persistence.Domains.Metrics
         public long BlobPosition { get; private set; }
         
         public long MaxSavedMessageId { get; private set; }
+        
+        public int LastSavedChunk { get; set; }
+        public TimeSpan LastSaveDuration { get; set; }
+        public DateTime LastSaveMoment { get; set; } = DateTime.UtcNow;
 
         public void Update(MessagePageId pageId, long blobPosition, long maxSavedMessageId)
         {

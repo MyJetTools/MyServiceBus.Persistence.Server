@@ -4,6 +4,10 @@ interface ITopicInfo{
     writePosition:number;
     messageId:number;
     savedMessageId:number;
+    lastSaveChunk: number;
+    lastSaveDur: string;
+    lastSaveDate: string;
+    lastSaveMoment: string;
     loadedPages:ILoadedPage[];
     activePages:number[];
     queues: ITopicQueue[];
@@ -14,6 +18,7 @@ interface ILoadedPage{
     hasSkipped: boolean,
     percent: number,
     count: number
+    
 }
 
 interface ITopicQueue{

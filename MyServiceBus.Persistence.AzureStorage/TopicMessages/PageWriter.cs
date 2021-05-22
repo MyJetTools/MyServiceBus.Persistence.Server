@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using MyAzurePageBlobs;
@@ -39,13 +40,19 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
         private async Task UploadToBlobAsync(List<ReadOnlyMemory<byte>> serializedMessages, List<MessageContentGrpcModel> messages)
         {
+            var sw = new Stopwatch();
+            sw.Start();
             await _binaryPackagesSequenceBuilder.AppendAsync(serializedMessages);
-
+            sw.Stop();
             foreach (var message in messages)
             {
                 _messagesInBlob.Add(message.MessageId, message);
             }
-            
+
+
+            _topicMetrics.LastSavedChunk = messages.Count;
+            _topicMetrics.LastSaveDuration = sw.Elapsed;
+            _topicMetrics.LastSaveMoment = DateTime.UtcNow;
         }
 
 
