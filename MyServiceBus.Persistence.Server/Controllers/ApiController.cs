@@ -49,7 +49,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 
                 queuesSnapshotId = messageSnapshot.SnapshotId,
            
-                LoadedPages = ServiceLocator.MessagesContentCache.GetLoadedPages().Select(itm =>
+                topics = ServiceLocator.MessagesContentCache.GetLoadedPages().Select(itm =>
                 {
 
                     var snapshot = messageSnapshot.Cache.FirstOrDefault(st => st.TopicId == itm.Key);
@@ -62,7 +62,11 @@ namespace MyServiceBus.Persistence.Server.Controllers
                         writePosition = topicMetrics.BlobPosition,
                         messageId = snapshot?.MessageId ?? -1,
                         savedMessageId = topicMetrics.MaxSavedMessageId,
-                        pages = itm.Value.OrderBy(pageId => pageId),
+                        loadedPages = itm.Value.OrderBy(page => new
+                        {
+                            pageId = page.PageId.Value,
+                            hasSkipped = page.HasSkippedId
+                        }),
                         activePages = (snapshot?.GetActivePages()
                                 .Select(messagePageId => messagePageId.Value) ?? Array.Empty<long>())
                             .OrderBy(pageId => pageId), 

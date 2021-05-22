@@ -63,14 +63,14 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         }
 
 
-        public Dictionary<string, IReadOnlyList<long>> GetLoadedPages()
+        public Dictionary<string, IReadOnlyList<IMessageContentPage>> GetLoadedPages()
         {
 
-            var result = new Dictionary<string, IReadOnlyList<long>>();
+            var result = new Dictionary<string, IReadOnlyList<IMessageContentPage>>();
             lock (_lockObject)
             {
                 foreach (var (topicId, pagesByTopic) in _cache)
-                    result.Add(topicId, pagesByTopic.Keys.ToList());
+                    result.Add(topicId, pagesByTopic.Values.ToList());
             }
             return result;
         }

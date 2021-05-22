@@ -1,12 +1,17 @@
 
-interface ILoadedPage{
+interface ITopicInfo{
     topicId:string;
     writePosition:number;
     messageId:number;
     savedMessageId:number;
-    pages:number[];
+    loadedPages:ILoadedPage[];
     activePages:number[];
     queues: ITopicQueue[];
+}
+
+interface ILoadedPage{
+    pageId: number,
+    hasSkipped: boolean
 }
 
 interface ITopicQueue{
@@ -27,7 +32,7 @@ interface IPersistentOperation{
 }
 
 interface IStatus{
-    loadedPages:ILoadedPage[];
+    topics:ITopicInfo[];
     awaitingOperations:IPersistentOperation[];
     queuesSnapshotId:number;
     activeOperations:IPersistentOperation[];

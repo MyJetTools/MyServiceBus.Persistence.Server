@@ -11,6 +11,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         
         private IReadOnlyList<MessageContentGrpcModel> _messagesAsList;
         
+        
+        public bool HasSkippedId { get; private set; }
         public void AddOrUpdate(MessageContentGrpcModel model)
         {
 
@@ -53,7 +55,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                     if (MinMessageId > model.MessageId)
                         MinMessageId = model.MessageId;
                 }
-                
+
+                HasSkippedId = MaxMessageId - MinMessageId  >= Count;
+
             }
     
         }
@@ -65,11 +69,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                 : null;
         }
 
-        public IEnumerable<MessageContentGrpcModel> GetMessages()
-        {
-            return _messages.Values;
-        }
-        
         public long TotalContentSize { get; private set; }
 
 

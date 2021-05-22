@@ -21,32 +21,42 @@ class HtmlRenderer
     }
     
     
-    private static renderLoadedPagesContent(pages:ILoadedPage[]):string{
+    private static renderLoadedPagesContent(topics:ITopicInfo[]):string{
         let result = '';
         
-        for (let page of pages){
+        for (let topic of topics){
             
             let badges = '';
-            for (let badge of page.pages){
-                badges += '<span class="badge badge-success" style="margin-left: 5px">'+badge+'</span>';
+            for (let loadedPage of topic.loadedPages){
+                if (loadedPage.hasSkipped){
+                    badges += '<span class="badge badge-danger" style="margin-left: 5px">'+loadedPage.pageId+'</span>';    
+                }
+                else{
+                    badges += '<span class="badge badge-success" style="margin-left: 5px">'+loadedPage.pageId+'</span>';
+                }
             }
 
             let activePagesBadges = '';
-            for (let activePage of page.activePages){
+            for (let activePage of topic.activePages){
                 activePagesBadges += '<span class="badge badge-warning" style="margin-left: 5px">'+activePage+'</span>';
             }
             
-            let queuesContent = this.renderQueuesTableContent(page.queues);
+            let queuesContent = this.renderQueuesTableContent(topic.queues);
             
-            result += '<tr><td>'+page.topicId+'<div>WritePos: '+page.writePosition+'</div></td><td>'+queuesContent+'</td><td><div>Max:'+page.messageId+'</div><div>Saved:'+page.savedMessageId+'</div></td><td><div>Active:</div>'+activePagesBadges+'<hr/><div>Loaded:</div>'+badges+'</td></tr>'
+            result += '<tr style="font-size: 10px">' +
+                '<td>'+topic.topicId+'<div>WritePos: '+topic.writePosition+'</div></td>' +
+                '<td>'+queuesContent+'</td>' +
+                '<td><div>Current Id:'+topic.messageId+'</div><div>Last Saved:'+topic.savedMessageId+'</div></td>' +
+                '<td><div>Active:</div>'+activePagesBadges+'<hr/><div>Loaded:</div>'+badges+'</td>' +
+                '</tr>'
         }
         
         return result;
     }
     
-    public static renderMainTable(pages:ILoadedPage[]):string {
+    public static renderMainTable(topics:ITopicInfo[]):string {
 
-        let content = this.renderLoadedPagesContent(pages);
+        let content = this.renderLoadedPagesContent(topics);
         
         return '<table class="table table-striped"><tr><th>Topic</th><th>Queues</th><th>MessageId</th><th>Pages</th></tr>'+content+'</table>';
 
@@ -80,7 +90,7 @@ class HtmlRenderer
     
     public static renderMainContent(r:IStatus):string {
         
-        let leftPart = this.renderMainTable(r.loadedPages);
+        let leftPart = this.renderMainTable(r.topics);
         
         let rightPart = 
             this.renderActiveOperations("Active operations", r.activeOperations)+

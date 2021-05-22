@@ -16,21 +16,14 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 
         public long MinMessageId => _messages.MinMessageId;
         public long MaxMessageId => _messages.MaxMessageId;
-        
+
+        public bool HasSkippedId => _messages.HasSkippedId;
 
         public WritableContentCachePage(MessagePageId pageId)
         {
             PageId = pageId;
 
         }
-        
-        public WritableContentCachePage(MessagePageId pageId, IReadOnlyList<MessageContentGrpcModel> initMessages):
-            this(pageId)
-        {
-            _messages.Init(initMessages);
-        }
-
-
 
         private void SyncLastAccess()
         {
@@ -79,18 +72,20 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             }
             
         }
-        
-        
+
         
         public void Init(IEnumerable<MessageContentGrpcModel> messagesToAdd)
         {
             _readerWriterLockSlim.EnterWriteLock();
             try
             {
+                
                 foreach (var grpcModel in messagesToAdd)
                 {
                     _messages.AddOrUpdate(grpcModel);
                 }
+                
+                
 
             }
             finally

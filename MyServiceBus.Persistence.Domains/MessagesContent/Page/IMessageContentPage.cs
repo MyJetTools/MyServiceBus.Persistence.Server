@@ -18,8 +18,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         long TotalContentSize { get; }
 
         IReadOnlyList<MessageContentGrpcModel> GetMessages();
-
-        (IReadOnlyList<long> holes, int count) TestIfThereAreHoles(long pageId);
+        
+        bool HasSkippedId { get; }
 
     }
 
