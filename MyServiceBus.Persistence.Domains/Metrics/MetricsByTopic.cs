@@ -18,7 +18,7 @@ namespace MyServiceBus.Persistence.Domains.Metrics
             if (MaxSavedMessageId < maxSavedMessageId)
                 MaxSavedMessageId = maxSavedMessageId;
             
-            if (PageId.Value >= pageId.Value)
+            if (PageId.Value <= pageId.Value)
             {
                 BlobPosition = blobPosition;
                 PageId = pageId;
