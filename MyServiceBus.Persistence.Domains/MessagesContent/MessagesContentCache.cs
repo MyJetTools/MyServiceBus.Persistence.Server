@@ -95,14 +95,14 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             return result;
         }
         
-        public IReadOnlyList<MessagePageId> GetLoadedPages(string topicId)
+        public IReadOnlyList<IMessageContentPage> GetLoadedPages(string topicId)
         {
             lock (_lockObject)
             {
                 if (_cache.TryGetValue(topicId,out var pagesByTopic))
-                    return pagesByTopic.Keys.Select(itm => new MessagePageId(itm)).ToList();
+                    return pagesByTopic.Values.ToList();
             }
-            return Array.Empty<MessagePageId>();
+            return Array.Empty<IMessageContentPage>();
         }
 
         public void DisposePage(string topicId, in MessagePageId pageId)
@@ -126,7 +126,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         public IReadOnlyList<WritableContentCachePage> GetWritablePagesHasMessagesToUpload(string topicId)
         {
             List<WritableContentCachePage> result = null;
-            lock (_cache)
+            lock (_lockObject)
             {
 
                 if (_cache.TryGetValue(topicId, out var pagesByTopic))
@@ -148,6 +148,17 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
                 }
 
                 return (IReadOnlyList<WritableContentCachePage>)result ?? Array.Empty<WritableContentCachePage>();
+            }
+        }
+
+        public bool HasPage(string topicId, MessagePageId pageId)
+        {
+            lock (_lockObject)
+            {
+                if (_cache.TryGetValue(topicId, out var result))
+                    return result.ContainsKey(pageId.Value);
+
+                return false;
             }
         }
     }

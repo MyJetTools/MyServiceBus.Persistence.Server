@@ -66,19 +66,6 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
 
             return result;
         }
-        
-        
-        public IEnumerable<MessagePageId> GetPagesToWarmUp(ActivePagesByTopic activePagesByTopic)
-        {
-            var pagesInCache = _messagesContentCache.GetLoadedPages(activePagesByTopic.Snapshot.TopicId);
-            
-            return pagesInCache.Where(pageInQueue => !activePagesByTopic.Pages.Any(pageInQueue.EqualsWith));
-        }
 
-        public IEnumerable<MessagePageId> GetPagesToGarbageCollect(ActivePagesByTopic activePagesByTopic)
-        {
-            var pagesInCache = _messagesContentCache.GetLoadedPages(activePagesByTopic.Snapshot.TopicId);
-            return pagesInCache.Where(pageInCache => !activePagesByTopic.Pages.Any(pageInCache.EqualsWith));
-        }
     }
 }

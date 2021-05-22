@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.PersistenceOperations;
@@ -54,8 +55,11 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
                 if (_appGlobalFlags.IsShuttingDown)
                     return;
 
-                foreach (var pageId in _activePagesCalculator.GetPagesToWarmUp(activePage))
+                foreach (var pageId in activePage.Pages)
                 {
+                    if (_messagesContentCache.HasPage(activePage.Snapshot.TopicId, pageId))
+                        continue;
+                    
                     var task = _taskSchedulerByTopic.ExecuteTaskAsync(activePage.Snapshot.TopicId, pageId, "Warming Up",
                         () => WarmUpThreadTopicSynchronizedAsync(activePage.Snapshot.TopicId, pageId));
 
@@ -64,19 +68,17 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
                 }
 
 
-                foreach (var pageToGc in _activePagesCalculator.GetPagesToGarbageCollect(activePage))
+                foreach (var loadedPage in _messagesContentCache.GetLoadedPages(activePage.Snapshot.TopicId))
                 {
+                    
+                    if (activePage.Pages.Any(activePageId => loadedPage.PageId.Value == activePageId.Value))
+                        continue;
 
-                    var page = _messagesContentCache.TryGetPage(activePage.Snapshot.TopicId, pageToGc);
-
-                    if (page == null)
+                    if (now - loadedPage.LastAccessTime < GcTimeout)
                         continue;
                     
-                    if (now - page.LastAccessTime < GcTimeout)
-                        continue;
-                    
-                    var task = _taskSchedulerByTopic.ExecuteTaskAsync(activePage.Snapshot.TopicId, pageToGc, "GC page",
-                        () => GcThreadTopicSynchronizedAsync(activePage.Snapshot.TopicId, pageToGc));
+                    var task = _taskSchedulerByTopic.ExecuteTaskAsync(activePage.Snapshot.TopicId, loadedPage.PageId, "GC page",
+                        () => GcThreadTopicSynchronizedAsync(activePage.Snapshot.TopicId, loadedPage.PageId));
 
                     tasks ??= new List<Task>();
                     tasks.Add(task);
