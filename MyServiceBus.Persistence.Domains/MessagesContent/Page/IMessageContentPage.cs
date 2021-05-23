@@ -9,7 +9,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
     {
         MessagePageId PageId { get; }
         MessageContentGrpcModel TryGet(long messageId);
-        DateTime LastAccessTime { get;}
+        DateTime LastAccessTime { get; }
         int Count { get; }
         long TotalContentSize { get; }
         IReadOnlyList<MessageContentGrpcModel> GetMessages();
