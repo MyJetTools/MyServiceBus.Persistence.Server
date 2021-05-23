@@ -116,10 +116,12 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
                 return;
             }
 
-            if (gcResult.NotReadyToGc)
+
+            while (gcResult.NotReadyToGc)
             {
-                _logger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageNo:"+pageId, "Attempt to GC PageWriter which has not synced messages. Skipping the round") ;
-                return;
+                _logger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageNo:"+pageId, "Attempt to GC PageWriter which has not synced messages. Trying to Sync them to the Blob") ;
+                await _messagesContentPersistentStorage.SyncAsync(topicId, pageId);
+                gcResult = await _messagesContentPersistentStorage.TryToGcAsync(topicId, pageId);
             }
 
             if (gcResult.DisposedPageWriter != null)
