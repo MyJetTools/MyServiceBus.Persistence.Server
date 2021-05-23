@@ -188,6 +188,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
         public int MessagesInBlobAmount => _messagesInBlob.Count;
+        public long WritePosition => _binaryPackagesSequenceBuilder?.Position ?? 0;
     }
 
 }

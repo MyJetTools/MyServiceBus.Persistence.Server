@@ -21,6 +21,19 @@ class HtmlRenderer
     }
     
     
+    private static compileTable(values: string[]):string{
+        
+        let result = '<table style="width: 100%"><tr>';
+        
+        for (let value of values){
+            result += '<td>'+value+'</td>';
+        }
+        
+        return result + '</tr></table>';
+        
+    }
+    
+    
     private static renderLoadedPagesContent(topics:ITopicInfo[]):string{
         let result = '';
         
@@ -29,13 +42,21 @@ class HtmlRenderer
             let badges = '';
             for (let loadedPage of topic.loadedPages) {
                 badges += '<div>';
+                
+                
+                
+                var theBadge = "";
+                
                 if (loadedPage.hasSkipped) {
-                    badges += '<div><span class="badge badge-danger" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
+                    theBadge += '<div><span class="badge badge-danger" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 } else {
-                    badges += '<div><span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
+                    theBadge += '<div><span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 }
 
-                badges += 
+                
+               
+                
+                badges +=  this.compileTable([theBadge, 'WritePos: '+loadedPage.writePosition])  +
                     '<div class="progress">' +
                     '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.count + '</div>'+
                     '</div>' +
@@ -51,7 +72,7 @@ class HtmlRenderer
             
             
             result += '<tr style="font-size: 12px">' +
-                '<td>'+topic.topicId+'<div>WritePos: '+topic.writePosition+'</div>' +
+                '<td>'+topic.topicId+
                 '<div>Active:</div>'+activePagesBadges+'<hr/><div>Loaded:</div>'+badges+'</td>' +
                 '<td>'+queuesContent+'</td>' +
                 '<td><div>Current Id:'+topic.messageId+'</div><div>Last Saved:'+topic.savedMessageId+'</div><div>Last Save Chunk:'+topic.lastSaveChunk+'</div>' +

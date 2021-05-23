@@ -56,25 +56,34 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 {
 
                     var snapshot = messageSnapshot.Cache.FirstOrDefault(st => st.TopicId == itm.Key);
+                    
+                    
 
                     var topicMetrics = ServiceLocator.MetricsByTopic.Get(itm.Key);
 
                     return new
                     {
                         topicId = itm.Key,
-                        writePosition = topicMetrics.BlobPosition,
+ 
                         messageId = snapshot?.MessageId ?? -1,
                         savedMessageId = topicMetrics.MaxSavedMessageId,
                         lastSaveChunk = topicMetrics.LastSavedChunk,
                         lastSaveDur = topicMetrics.LastSaveDuration.ToString(),
                         lastSaveMoment =  (DateTime.UtcNow - topicMetrics.LastSaveMoment).ToString(),
                         loadedPages = itm.Value.OrderBy(page => page.PageId.Value)
-                            .Select(page => new
+                            .Select(page =>
                             {
-                                pageId = page.PageId.Value,
-                                hasSkipped = page.HasSkipped(),
-                                percent = page.Percent(),
-                                count = page.Count
+                                var writePosition =
+                                    ServiceLocator.MessagesContentPersistentStorage.GetWritePosition(itm.Key,
+                                        page.PageId);
+                                return new
+                                {
+                                    pageId = page.PageId.Value,
+                                    hasSkipped = page.HasSkipped(),
+                                    percent = page.Percent(),
+                                    count = page.Count,
+                                    writePosition = writePosition,
+                                };
                             }),
                         activePages = (snapshot?.GetActivePages()
                                 .Select(messagePageId => messagePageId.Value) ?? Array.Empty<long>())

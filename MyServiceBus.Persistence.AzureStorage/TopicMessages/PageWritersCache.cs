@@ -60,7 +60,6 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             return writer;
         }
 
-
         public async ValueTask<PageWriter> TryGetAsync(MessagePageId pageId, Func<WritableContentPage> getWritableContentCachePage)
         {
             var writer = TryGetOrNull(pageId);

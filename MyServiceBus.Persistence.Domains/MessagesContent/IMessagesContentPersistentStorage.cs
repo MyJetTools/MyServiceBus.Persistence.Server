@@ -14,6 +14,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         MessagePageId PageId { get; }
         
         int MessagesInBlobAmount { get; }
+        
+        long WritePosition { get; }
 
     }
 
@@ -47,6 +49,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         ValueTask<GcWriterResult> TryToGcAsync(string topicId, MessagePageId pageId);
 
         IReadOnlyList<IPageWriter> GetLoadedWriters(string topicId);
+        long GetWritePosition(string topicId, MessagePageId pagePageId);
     }
     
 

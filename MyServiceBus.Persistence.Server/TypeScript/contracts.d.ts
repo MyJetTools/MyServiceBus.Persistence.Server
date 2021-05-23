@@ -1,7 +1,6 @@
 
 interface ITopicInfo{
     topicId:string;
-    writePosition:number;
     messageId:number;
     savedMessageId:number;
     lastSaveChunk: number;
@@ -17,7 +16,8 @@ interface ILoadedPage{
     pageId: number,
     hasSkipped: boolean,
     percent: number,
-    count: number
+    count: number,
+    writePosition:number;
     
 }
 

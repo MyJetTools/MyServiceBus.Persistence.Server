@@ -14,6 +14,14 @@ var HtmlRenderer = /** @class */ (function () {
         }
         return result;
     };
+    HtmlRenderer.compileTable = function (values) {
+        var result = '<table style="width: 100%"><tr>';
+        for (var _i = 0, values_1 = values; _i < values_1.length; _i++) {
+            var value = values_1[_i];
+            result += '<td>' + value + '</td>';
+        }
+        return result + '</tr></table>';
+    };
     HtmlRenderer.renderLoadedPagesContent = function (topics) {
         var result = '';
         for (var _i = 0, topics_1 = topics; _i < topics_1.length; _i++) {
@@ -22,17 +30,18 @@ var HtmlRenderer = /** @class */ (function () {
             for (var _a = 0, _b = topic.loadedPages; _a < _b.length; _a++) {
                 var loadedPage = _b[_a];
                 badges += '<div>';
+                var theBadge = "";
                 if (loadedPage.hasSkipped) {
-                    badges += '<div><span class="badge badge-danger" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
+                    theBadge += '<div><span class="badge badge-danger" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 }
                 else {
-                    badges += '<div><span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
+                    theBadge += '<div><span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 }
-                badges +=
+                badges += this.compileTable([theBadge, 'WritePos: ' + loadedPage.writePosition]) +
                     '<div class="progress">' +
-                        '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.count + '</div>' +
-                        '</div>' +
-                        '</div>';
+                    '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.count + '</div>' +
+                    '</div>' +
+                    '</div>';
             }
             var activePagesBadges = '';
             for (var _c = 0, _d = topic.activePages; _c < _d.length; _c++) {
@@ -41,7 +50,7 @@ var HtmlRenderer = /** @class */ (function () {
             }
             var queuesContent = this.renderQueuesTableContent(topic.queues);
             result += '<tr style="font-size: 12px">' +
-                '<td>' + topic.topicId + '<div>WritePos: ' + topic.writePosition + '</div>' +
+                '<td>' + topic.topicId +
                 '<div>Active:</div>' + activePagesBadges + '<hr/><div>Loaded:</div>' + badges + '</td>' +
                 '<td>' + queuesContent + '</td>' +
                 '<td><div>Current Id:' + topic.messageId + '</div><div>Last Saved:' + topic.savedMessageId + '</div><div>Last Save Chunk:' + topic.lastSaveChunk + '</div>' +

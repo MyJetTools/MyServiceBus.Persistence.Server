@@ -144,5 +144,17 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
                 return Array.Empty<IPageWriter>();
             }
         }
+
+        public long GetWritePosition(string topicId, MessagePageId pagePageId)
+        {
+            lock (_lockObject)
+            {
+                if (!_pageWritersCacheByTopic.TryGetValue(topicId, out var result)) 
+                    return -1;
+                
+                var writer = result.TryGetOrNull(pagePageId);
+                return writer?.WritePosition ?? -1;
+            }
+        }
     }
 }
