@@ -72,7 +72,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
             return Content("OK");
         }
 
-        [HttpPost("/Debug/Download")]
+        [HttpGet("/Debug/Download")]
         public async ValueTask<IActionResult> Download([Required] [FromQuery] string topicId, [Required] [FromQuery] long pageId)
         {
             var messagePageId = new MessagePageId(pageId);
