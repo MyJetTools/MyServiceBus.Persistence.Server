@@ -63,5 +63,13 @@ namespace MyServiceBus.Persistence.Server.Controllers
             });
             return Json(result);
         }
+
+        [HttpPost("/Debug/SetDebugMode")]
+        public IActionResult SetTopicInDebugMode([FromQuery] string topicId)
+        {
+            ServiceLocator.AppGlobalFlags.DebugTopic = topicId;
+
+            return Content("OK");
+        }
     }
 }
