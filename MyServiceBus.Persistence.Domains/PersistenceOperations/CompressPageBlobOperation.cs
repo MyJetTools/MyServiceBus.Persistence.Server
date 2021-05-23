@@ -12,14 +12,16 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
         private readonly ICompressedMessagesStorage _compressedMessagesStorage;
 
         private readonly IAppLogger _appLogger;
+        private readonly AppGlobalFlags _appGlobalFlags;
 
 
         public CompressPageBlobOperation(IMessagesContentPersistentStorage persistentStorage, ICompressedMessagesStorage compressedMessagesStorage,
-            IAppLogger appLogger)
+            IAppLogger appLogger, AppGlobalFlags appGlobalFlags)
         {
             _persistentStorage = persistentStorage;
             _compressedMessagesStorage = compressedMessagesStorage;
             _appLogger = appLogger;
+            _appGlobalFlags = appGlobalFlags;
         }
     
 
@@ -41,20 +43,28 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
             
             var compressedPage = messageContentPage.GetCompressedPage();
             
-            _appLogger.AddLog(LogProcess.PagesCompressor,   topicId,  logContext, $"Writing Compressed data for page {pageId}.");
-            await _compressedMessagesStorage.WriteCompressedPageAsync(topicId, pageId, compressedPage, _appLogger);
+            if (_appGlobalFlags.DebugTopic == topicId)
+                _appLogger.AddLog(LogProcess.PagesCompressor,   topicId,  logContext, $"Writing Compressed data for page {pageId}.");
             
-            _appLogger.AddLog(LogProcess.PagesCompressor, topicId, logContext, $"Verifying compressed data for page {pageId}");
+            await _compressedMessagesStorage.WriteCompressedPageAsync(topicId, pageId, compressedPage, _appLogger);
+
+            if (_appGlobalFlags.DebugTopic == topicId)
+                _appLogger.AddLog(LogProcess.PagesCompressor, topicId, logContext, $"Verifying compressed data for page {pageId}");
+            
             var compressedPageToVerify = await _compressedMessagesStorage.GetCompressedPageAsync(topicId, pageId);
 
             var messages = compressedPageToVerify.Messages;
 
-            _appLogger.AddLog(LogProcess.PagesCompressor, topicId, logContext, $"Verified compressed data for page {pageId}. Messages: " + messages.Count);
+            if (_appGlobalFlags.DebugTopic == topicId)
+                _appLogger.AddLog(LogProcess.PagesCompressor, topicId, logContext, $"Verified compressed data for page {pageId}. Messages: " + messages.Count);
             
-            _appLogger.AddLog(LogProcess.PagesCompressor, topicId, logContext, $"Deleting Uncompressed page {pageId}");
+            if (_appGlobalFlags.DebugTopic == topicId)
+                _appLogger.AddLog(LogProcess.PagesCompressor, topicId, logContext, $"Deleting Uncompressed page {pageId}");
+            
             await _persistentStorage.DeleteNonCompressedPageAsync(topicId, pageId);
 
-            _appLogger.AddLog(LogProcess.PagesCompressor, topicId, logContext, "Written Compressed Page: " + pageId +". Messages in the page:"+messageContentPage.Count);
+            if (_appGlobalFlags.DebugTopic == topicId)
+                _appLogger.AddLog(LogProcess.PagesCompressor, topicId, logContext, "Written Compressed Page: " + pageId +". Messages in the page:"+messageContentPage.Count);
 
         }
 
