@@ -46,6 +46,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
             ZippedContent = zippedContent;
             Messages = zippedContent.UnzipMessages();
             PageId = pageId;
+            CalcMinMax();
         }
 
         public CompressedPage(MessagePageId pageId, IReadOnlyList<MessageContentGrpcModel> messages)
@@ -53,13 +54,17 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
             ZippedContent = messages.ZipMessages();
             Messages = messages;
             PageId = pageId;
+            CalcMinMax();
         }
 
         private void CalcMinMax()
         {
+
+    
+            
             foreach (var msg in Messages)
             {
-                if (MinMessagesId == -1)
+                if (MinMessagesId < 0)
                 {
                     MinMessagesId = msg.MessageId;
                 }
@@ -71,7 +76,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
                     }
                 }
                 
-                if (MaxMessagesId == -1)
+                if (MaxMessagesId < 0)
                 {
                     MaxMessagesId = msg.MessageId;
                 }
@@ -106,7 +111,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
         }
 
         public long MinMessagesId { get; private set; } = -1;
-        public long MaxMessagesId { get; private set; } = -1;
+        public long MaxMessagesId { get; private set; } = -2;
 
     }
 
