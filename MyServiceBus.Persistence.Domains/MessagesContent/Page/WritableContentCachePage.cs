@@ -62,6 +62,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
             }
             finally
             {
+                SyncLastAccess();
                 _readerWriterLockSlim.ExitWriteLock();
             }
         }

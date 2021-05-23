@@ -56,6 +56,16 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
 
+        private ReadOnlyMemory<byte> SerializeMessage(MessageContentGrpcModel messageContent)
+        {
+            var memoryStream = new MemoryStream();
+            ProtoBuf.Serializer.Serialize(memoryStream, messageContent);
+            var memory = memoryStream.GetBuffer();
+
+            return new ReadOnlyMemory<byte>(memory, 0, (int) memoryStream.Position);
+        }
+
+
         private async Task SynchronizeMessagesAsync(IReadOnlyList<MessageContentGrpcModel> messagesToUpload)
         {
             var serializedMessages = new List<ReadOnlyMemory<byte>>();
@@ -66,10 +76,7 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
             foreach (var messageContent in messagesToUpload)
             {
                 
-                var memoryStream = new MemoryStream();
-                ProtoBuf.Serializer.Serialize(memoryStream, messageContent);
-                var memory = memoryStream.GetBuffer();
-                serializedMessages.Add(new ReadOnlyMemory<byte>(memory, 0, (int)memoryStream.Position));
+                serializedMessages.Add(SerializeMessage(messageContent));
                 grpcMessages.Add(messageContent);
                 
                 
