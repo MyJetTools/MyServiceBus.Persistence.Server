@@ -71,5 +71,26 @@ namespace MyServiceBus.Persistence.Server.Controllers
 
             return Content("OK");
         }
+
+        [HttpPost("/Debug/Download")]
+        public async ValueTask<IActionResult> Download([Required] [FromQuery] string topicId, [Required] [FromQuery] long pageId)
+        {
+            var messagePageId = new MessagePageId(pageId);
+            var page = ServiceLocator.MessagesContentCache.TryGetPage(topicId, messagePageId);
+
+            if (page == null)
+            {
+                await ServiceLocator.TaskSchedulerByTopic.ExecuteTaskAsync(topicId, messagePageId, "Load Debug Page",
+                    async () =>
+                    {
+                        await ServiceLocator.MessagesContentReader.LoadPageIntoCacheTopicSynchronizedAsync(topicId,
+                            messagePageId);
+
+                    });
+            }
+            
+            page = ServiceLocator.MessagesContentCache.TryGetPage(topicId, messagePageId);
+            return File(page.GetCompressedPage().ZippedContent.ToArray(), pageId + "application/zip");
+        }
     }
 }
