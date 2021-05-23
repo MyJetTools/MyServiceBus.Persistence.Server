@@ -42,48 +42,18 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
             if (!_appGlobalFlags.Initialized)
                 return;
 
-
             var pages = _activePagesCalculator.GetActivePages();
 
             List<Task> tasks = null;
 
-            var now = DateTime.UtcNow;
-
             foreach (var activePage in pages.Values)
             {
-
                 if (_appGlobalFlags.IsShuttingDown)
                     return;
 
-                foreach (var pageId in activePage.Pages)
-                {
-                    if (_messagesContentCache.HasPage(activePage.Snapshot.TopicId, pageId))
-                        continue;
-                    
-                    var task = _taskSchedulerByTopic.ExecuteTaskAsync(activePage.Snapshot.TopicId, pageId, "Warming Up",
-                        () => WarmUpThreadTopicSynchronizedAsync(activePage.Snapshot.TopicId, pageId));
+                tasks = WarmUpPages(activePage, tasks);
 
-                    tasks ??= new List<Task>();
-                    tasks.Add(task);
-                }
-
-
-                foreach (var loadedPage in _messagesContentCache.GetLoadedPages(activePage.Snapshot.TopicId))
-                {
-                    
-                    if (activePage.Pages.Any(activePageId => loadedPage.PageId.Value == activePageId.Value))
-                        continue;
-
-                    if (now - loadedPage.LastAccessTime < GcTimeout)
-                        continue;
-                    
-                    var task = _taskSchedulerByTopic.ExecuteTaskAsync(activePage.Snapshot.TopicId, loadedPage.PageId, "GC page",
-                        () => GcThreadTopicSynchronizedAsync(activePage.Snapshot.TopicId, loadedPage.PageId));
-
-                    tasks ??= new List<Task>();
-                    tasks.Add(task);
-                }
-
+                tasks = GcPages(activePage, tasks);
             }
 
             if (tasks != null)
@@ -91,6 +61,47 @@ namespace MyServiceBus.Persistence.Domains.BackgroundJobs
 
         }
 
+
+        private List<Task> WarmUpPages(ActivePagesByTopic activePage, List<Task> tasks)
+        {
+            foreach (var pageId in activePage.Pages)
+            {
+                if (_messagesContentCache.HasPage(activePage.Snapshot.TopicId, pageId))
+                    continue;
+                    
+                var task = _taskSchedulerByTopic.ExecuteTaskAsync(activePage.Snapshot.TopicId, pageId, "Warming Up",
+                    () => WarmUpThreadTopicSynchronizedAsync(activePage.Snapshot.TopicId, pageId));
+
+                tasks ??= new List<Task>();
+                tasks.Add(task);
+            }
+
+            return tasks;
+        }
+
+        private List<Task> GcPages(ActivePagesByTopic activePage, List<Task> tasks)
+        {
+            var now = DateTime.UtcNow;
+            //Garbage collect pages
+            foreach (var loadedPage in _messagesContentCache.GetLoadedPages(activePage.Snapshot.TopicId))
+            {
+                    
+                if (activePage.Pages.Any(activePageId => loadedPage.PageId.Value == activePageId.Value))
+                    continue;
+
+                if (now - loadedPage.LastAccessTime < GcTimeout)
+                    continue;
+                    
+                var task = _taskSchedulerByTopic.ExecuteTaskAsync(activePage.Snapshot.TopicId, loadedPage.PageId, "GC page",
+                    () => GcThreadTopicSynchronizedAsync(activePage.Snapshot.TopicId, loadedPage.PageId));
+
+                tasks ??= new List<Task>();
+                tasks.Add(task);
+            }
+
+
+            return tasks;
+        }
 
 
         private async Task WarmUpThreadTopicSynchronizedAsync(string topicId, MessagePageId pageId)
