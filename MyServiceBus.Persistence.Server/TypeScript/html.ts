@@ -28,17 +28,18 @@ class HtmlRenderer
             
             let badges = '';
             for (let loadedPage of topic.loadedPages) {
+                badges += '<div>';
                 if (loadedPage.hasSkipped) {
                     badges += '<div><span class="badge badge-danger" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 } else {
                     badges += '<div><span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 }
 
-                badges += '<div>' +
+                badges += 
                     '<div class="progress">' +
-                    '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.count + '</div>'
-                '</div>' +
-                '</div>';
+                    '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.count + '</div>'+
+                    '</div>' +
+                    '</div>';
             }
 
             let activePagesBadges = '';

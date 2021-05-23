@@ -21,17 +21,18 @@ var HtmlRenderer = /** @class */ (function () {
             var badges = '';
             for (var _a = 0, _b = topic.loadedPages; _a < _b.length; _a++) {
                 var loadedPage = _b[_a];
+                badges += '<div>';
                 if (loadedPage.hasSkipped) {
                     badges += '<div><span class="badge badge-danger" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 }
                 else {
                     badges += '<div><span class="badge badge-success" style="margin-left: 5px">' + loadedPage.pageId + '</span></div>';
                 }
-                badges += '<div>' +
+                badges +=
                     '<div class="progress">' +
-                    '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.count + '</div>';
-                '</div>' +
-                    '</div>';
+                        '<div class="progress-bar" role="progressbar" style="width: ' + loadedPage.percent + '%;" aria-valuenow="' + loadedPage.percent + '" aria-valuemin="0" aria-valuemax="100">' + loadedPage.count + '</div>' +
+                        '</div>' +
+                        '</div>';
             }
             var activePagesBadges = '';
             for (var _c = 0, _d = topic.activePages; _c < _d.length; _c++) {
