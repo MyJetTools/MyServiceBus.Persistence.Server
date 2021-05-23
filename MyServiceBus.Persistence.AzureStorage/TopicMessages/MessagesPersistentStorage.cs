@@ -126,6 +126,11 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
             await result.DisposeAsync();
 
+            lock (_lockObject)
+            {
+                _pageWritersCacheByTopic[topicId].Remove(pageId);
+            }
+
             return new GcWriterResult
             {
                 DisposedPageWriter = result
