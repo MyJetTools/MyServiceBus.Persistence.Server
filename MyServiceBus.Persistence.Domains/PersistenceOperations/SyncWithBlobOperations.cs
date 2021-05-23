@@ -41,7 +41,7 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
             {
 
                 if (_appGlobalFlags.DebugTopic == topicId)
-                    _appLogger.AddLog(LogProcess.Debug, topicId, "Sync Topic Event", $"Found pages {pages} to sync ");
+                    _appLogger.AddLog(LogProcess.Debug, topicId, "Sync Topic Event", $"Found pages {pages.Count} to sync ");
 
                 
                 foreach (var page in pages)
@@ -50,11 +50,20 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
                     if (page is WritableContentPage {NotSavedAmount: > 0} writableContentCachePage)
                     {
                         if (_appGlobalFlags.DebugTopic == topicId)
-                            _appLogger.AddLog(LogProcess.Debug, topicId, $"Sync Page {page.PageId}", $"Page {page.GetHashCode()} has {page.NotSavedAmount} unsynched messages");
+                            _appLogger.AddLog(LogProcess.Debug, topicId, $"Sync Page {page.PageId}", $"Page with hash {page.GetHashCode()} has {page.NotSavedAmount} unsynched messages");
                         
                         await _taskSchedulerByTopic.ExecuteTaskAsync(topicId, page.PageId, "Upload messages to blob", async ()=>
                         {
+                            
+                            if (_appGlobalFlags.DebugTopic == topicId)
+                                _appLogger.AddLog(LogProcess.Debug, topicId, $"Sync Page {page.PageId}", "Start uploading messages");
+
                             var result = await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
+                            
+                            
+                            if (_appGlobalFlags.DebugTopic == topicId)
+                                _appLogger.AddLog(LogProcess.Debug, topicId, $"Sync Page {page.PageId}", $"Upload result is {result}. Messages after upload {page.NotSavedAmount}");
+
 
                             while (result != SyncResult.Done)
                             {
