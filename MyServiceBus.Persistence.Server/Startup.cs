@@ -22,6 +22,16 @@ namespace MyServiceBus.Persistence.Server
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+
+            var assembly = this.GetType().Assembly;
+
+
+            foreach (var assemblyName in assembly.GetReferencedAssemblies())
+            {
+                Console.WriteLine(assemblyName.Name+" "+assemblyName.Version);
+            }
+            
+            
             _services = services;
             Settings = MySettingsReader.SettingsReader.GetSettings<SettingsModel>(".myservicebus-persistence");
 

@@ -90,7 +90,7 @@ namespace MyServiceBus.Persistence.Server.Controllers
             }
             
             page = ServiceLocator.MessagesContentCache.TryGetPage(topicId, messagePageId);
-            return File(page.GetCompressedPage().ZippedContent.ToArray(), pageId + "application/zip");
+            return File(page.GetCompressedPage().ZippedContent.ToArray(), pageId + "application/zip", topicId+'-'+pageId+".zip");
         }
     }
 }

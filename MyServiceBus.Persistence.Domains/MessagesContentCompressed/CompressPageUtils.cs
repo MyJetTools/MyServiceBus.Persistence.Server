@@ -4,6 +4,8 @@ using System.IO;
 using MyServiceBus.Persistence.Domains.MessagesContent;
 using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 using MyServiceBus.Persistence.Grpc;
+using MyServiceBus.MessagesCompressor;
+
 
 namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
 {
@@ -18,7 +20,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
             var stream = new MemoryStream();
             ProtoBuf.Serializer.Serialize(stream, messages);
             stream.Position = 0;
-            return stream.Zip();
+            return stream.Compress();
         }
 
 
@@ -29,7 +31,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContentCompressed
                 return Array.Empty<MessageContentGrpcModel>();
             }
 
-            var unzippedMemory = zippedContent.Unzip();
+            var unzippedMemory = zippedContent.Decompress();
             return ProtoBuf.Serializer.Deserialize<List<MessageContentGrpcModel>>(unzippedMemory) as
                 IReadOnlyList<MessageContentGrpcModel> ?? Array.Empty<MessageContentGrpcModel>();
         }
