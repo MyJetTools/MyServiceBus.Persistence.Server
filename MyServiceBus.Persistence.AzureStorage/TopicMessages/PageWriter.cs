@@ -66,6 +66,21 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
 
 
+        private static bool ContentIsTheSame(byte[] src, byte[] dest)
+        {
+            if (src.Length != dest.Length)
+                return false;
+
+            for (var i = 0; i < dest.Length; i++)
+            {
+                if (src[i] != dest[i])
+                    return false;
+            }
+
+            return true;
+        }
+        
+
         private async Task SynchronizeMessagesAsync(IReadOnlyList<MessageContentGrpcModel> messagesToUpload)
         {
             var serializedMessages = new List<ReadOnlyMemory<byte>>();
@@ -73,17 +88,24 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
 
             var size = 0;
             
-            foreach (var messageContent in messagesToUpload)
+            foreach (var messageContentToUpload in messagesToUpload)
             {
+
+                if (_messagesInBlob.TryGetValue(messageContentToUpload.MessageId, out var contentInBlob))
+                {
+                    if (messageContentToUpload.Created == contentInBlob.Created &&
+                        ContentIsTheSame(messageContentToUpload.Data, contentInBlob.Data))
+                        continue;
+                }
+
+                serializedMessages.Add(SerializeMessage(messageContentToUpload));
+                grpcMessages.Add(messageContentToUpload);
                 
-                serializedMessages.Add(SerializeMessage(messageContent));
-                grpcMessages.Add(messageContent);
                 
+                if (MaxMessageIdInBlob < messageContentToUpload.MessageId)
+                    MaxMessageIdInBlob = messageContentToUpload.MessageId;
                 
-                if (MaxMessageIdInBlob < messageContent.MessageId)
-                    MaxMessageIdInBlob = messageContent.MessageId;
-                
-                size += messageContent.Data.Length;
+                size += messageContentToUpload.Data.Length;
 
                 if (size > 1024 * 1024 * 3)
                 {
