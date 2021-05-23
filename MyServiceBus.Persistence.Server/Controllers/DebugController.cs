@@ -55,7 +55,12 @@ namespace MyServiceBus.Persistence.Server.Controllers
         public IActionResult GetWriters([Required] [FromQuery] string topicId)
         {
             var writers = ServiceLocator.MessagesContentPersistentStorage.GetLoadedWriters(topicId);
-            var result = writers.Select(itm => itm.PageId.Value);
+            var result = writers.Select(itm => new
+            {
+                pageId = itm.PageId.Value,
+                writablePageHashCode = itm.AssignedPage.GetHashCode(),
+                notSavedAmount = itm.AssignedPage.NotSavedAmount
+            });
             return Json(result);
         }
     }
