@@ -30,7 +30,7 @@ namespace MyServiceBus.Persistence.Domains
 
     public enum LogProcess
     {
-        All, System, PagesCompressor, PagesLoaderOrGc, MinuteIndexWriter
+        All, System, PagesCompressor, PagesLoaderOrGc, MinuteIndexWriter, NewMessages, Debug
     }
     
     

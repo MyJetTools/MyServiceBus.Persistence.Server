@@ -86,7 +86,31 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
                 var dt = DateTime.UtcNow;
 
                 var pageWriter = await _messagesContentPersistentStorage.TryGetAsync(topicId, pageId, 
-                    () => _messagesContentCache.CreateWritablePage(topicId, pageId));
+                    () =>
+                    {
+                        var result = _messagesContentCache.CreateWritablePage(topicId, pageId);
+
+                        if (result.Result != null)
+                            return result.Result;
+
+
+                        if (result.Exists != null)
+                        {
+                            if (result.Exists is WritableContentPage existingWritablePage)
+                            {
+                                _appLogger.AddLog(LogProcess.PagesLoaderOrGc, topicId, logContext, "Restoring uncompressed page and found existing writable content page. Using it");
+                                return existingWritablePage;
+                            }
+
+                            throw new Exception(
+                                $"Trying to create page {topicId}/{pageId} by found non writable content page {result.Exists.GetType()}");
+
+                        }
+
+                        throw new Exception($"RestorePageFromBlobOperation.TryRestoreFromUncompressedPage  I should not be here. {topicId}/{pageId}");
+
+
+                    });
 
                 if (pageWriter == null)
                 {

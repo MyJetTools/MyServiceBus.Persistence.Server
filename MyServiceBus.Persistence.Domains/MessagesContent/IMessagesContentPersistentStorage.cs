@@ -8,7 +8,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
 
     public interface IPageWriter
     {
-        WritableContentCachePage AssignedPage { get; }
+        WritableContentPage AssignedPage { get; }
         long MaxMessageIdInBlob { get; }
         
         MessagePageId PageId { get; }
@@ -38,9 +38,9 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
     {
         Task DeleteNonCompressedPageAsync(string topicId, MessagePageId pageId);
         
-        ValueTask CreateNewPageAsync(string topicId, MessagePageId pageId, WritableContentCachePage writableContentCachePage);
+        ValueTask CreateNewPageAsync(string topicId, MessagePageId pageId, Func<WritableContentPage> getWritableContentCachePage);
         
-        ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId, Func<WritableContentCachePage> getWritableContentCachePage);
+        ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId, Func<WritableContentPage> getWritableContentCachePage);
 
         Task<SyncResult> SyncAsync(string topicId, MessagePageId pageId);
 

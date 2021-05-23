@@ -41,7 +41,8 @@ namespace MyServiceBus.Persistence.Server.Controllers
                 page.Count,
                 shouldHaveAmount = page.ShouldHaveAmount(),
                 hasSkipped = page.HasSkipped(),
-                notSavedAmount = page.NotSavedAmount
+                notSavedAmount = page.NotSavedAmount,
+                hashCode = page.GetHashCode()
             };
 
 

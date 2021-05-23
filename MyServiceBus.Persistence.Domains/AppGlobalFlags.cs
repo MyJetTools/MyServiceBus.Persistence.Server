@@ -6,6 +6,8 @@ namespace MyServiceBus.Persistence.Domains
         public bool IsShuttingDown { get; set; }
 
         public int LoadBlobPagesSize { get; set; } = 4096 * 2;
+        
+        public string DebugTopic { get; set; }
 
     }
 }

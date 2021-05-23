@@ -62,13 +62,13 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
         }
         
 
-        public async ValueTask CreateNewPageAsync(string topicId, MessagePageId pageId, WritableContentCachePage writableContentCachePage)
+        public async ValueTask CreateNewPageAsync(string topicId, MessagePageId pageId, Func<WritableContentPage> getWritableContentCachePage)
         {
             var cacheByTopic = GetOrCreatePageWritersCache(topicId);
-            await cacheByTopic.CreateNewOrLoadAsync(pageId, writableContentCachePage);
+            await cacheByTopic.CreateNewOrLoadAsync(pageId, getWritableContentCachePage);
         }
 
-        public async ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId, Func<WritableContentCachePage> getWritableContentCachePage)
+        public async ValueTask<IPageWriter> TryGetAsync(string topicId, MessagePageId pageId, Func<WritableContentPage> getWritableContentCachePage)
         {
             var cache = GetOrCreatePageWritersCache(topicId);
             return await cache.TryGetAsync(pageId, getWritableContentCachePage);

@@ -5,7 +5,7 @@ using MyServiceBus.Persistence.Grpc;
 
 namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
 {
-    public class WritableContentCachePage : IMessageContentPage
+    public class WritableContentPage : IMessageContentPage
     {
         private readonly ReaderWriterLockSlim _readerWriterLockSlim = new ();
 
@@ -17,7 +17,7 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
         public long MaxMessageId => _messages.MaxMessageId;
         public int NotSavedAmount { get; private set; }
 
-        public WritableContentCachePage(MessagePageId pageId)
+        public WritableContentPage(MessagePageId pageId)
         {
             PageId = pageId;
         }
@@ -44,6 +44,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent.Page
                 _readerWriterLockSlim.ExitWriteLock();
             }
         }
+
+
 
         public IReadOnlyList<MessageContentGrpcModel> GetMessagesToSynchronize()
         {

@@ -61,10 +61,45 @@ namespace MyServiceBus.Persistence.Server.Grpc
                 }
                 else
                 {
-                    var newWritablePage = ServiceLocator.MessagesContentCache.CreateWritablePage(contract.TopicId, messagePageId);
-                    newWritablePage.NewMessages(group);
+                    var result =
+                        ServiceLocator.MessagesContentCache.CreateWritablePage(contract.TopicId, messagePageId);
+
+                    if (result.Result != null)
+                    {
+                        result.Result.NewMessages(group);
+                        continue;
+                    }
+
+                    if (result.Exists != null)
+                    {
+
+                        if (result.Exists is WritableContentPage writableContentPage)
+                        {
+                            ServiceLocator.AppLogger.AddLog(LogProcess.NewMessages, contract.TopicId,
+                                "PageId: " + group.Key, "Creating new writable content page which exists. Reusing it");
+                            writableContentPage.NewMessages(group);
+                            continue;
+                        }
+
+                        ServiceLocator.AppLogger.AddLog(LogProcess.NewMessages, contract.TopicId,
+                            "PageId: " + group.Key,
+                            "Trying to add messages, but readOnly messages content is found. Converting it into Writable");
+
+
+                        ServiceLocator.MessagesContentCache
+                            .ConvertIntoWritable(contract.TopicId, result.Exists).NewMessages(group);
+
+                        continue;
+                    }
+
+
+                    ServiceLocator.AppLogger.AddLog(LogProcess.NewMessages, contract.TopicId,
+                        "PageId: " + group.Key,
+                        "Trying to add messages, but readOnly messages content is found. Should not be here. Skipping messages");
+
+                    
                 }
-  
+
             }
 
         }

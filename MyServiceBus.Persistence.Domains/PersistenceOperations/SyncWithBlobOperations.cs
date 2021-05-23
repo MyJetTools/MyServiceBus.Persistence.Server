@@ -32,13 +32,26 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
                 return;
 
             var topics = _messagesContentCache.GetLoadedPages();
+            
+            
+            
+            
 
             foreach (var (topicId, pages) in topics)
             {
+
+                if (_appGlobalFlags.DebugTopic == topicId)
+                    _appLogger.AddLog(LogProcess.Debug, topicId, "Sync Topic Event", $"Found pages {pages} to sync ");
+
+                
                 foreach (var page in pages)
                 {
-                    if (page is WritableContentCachePage {NotSavedAmount: > 0} writableContentCachePage)
+                    
+                    if (page is WritableContentPage {NotSavedAmount: > 0} writableContentCachePage)
                     {
+                        if (_appGlobalFlags.DebugTopic == topicId)
+                            _appLogger.AddLog(LogProcess.Debug, topicId, $"Sync Page {page.PageId}", $"Page {page.GetHashCode()} has {page.NotSavedAmount} unsynched messages");
+                        
                         await _taskSchedulerByTopic.ExecuteTaskAsync(topicId, page.PageId, "Upload messages to blob", async ()=>
                         {
                             var result = await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
@@ -47,14 +60,16 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
                             {
                                 _appLogger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageId: " + page.PageId.Value,
                                     "There are messages to upload but no writer found. Creating one...");
-                                await _messagesContentPersistentStorage.CreateNewPageAsync(topicId, page.PageId, writableContentCachePage);
+                                await _messagesContentPersistentStorage.CreateNewPageAsync(topicId, page.PageId, ()=>writableContentCachePage);
                                 result = await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
                             }
- 
                         });
                     }
-                    
-             
+                    else
+                    {
+                        if (_appGlobalFlags.DebugTopic == topicId)
+                            _appLogger.AddLog(LogProcess.Debug, topicId, $"Sync Page {page.PageId}", $"Skipping Page {page.GetType()}. Hash: {page.GetHashCode()}");
+                    }
                 }
             }
 

@@ -6,6 +6,13 @@ using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 namespace MyServiceBus.Persistence.Domains.MessagesContent
 {
 
+
+    public class CreateWritablePageResult
+    {
+        public IMessageContentPage Exists { get; set; }
+        
+        public WritableContentPage Result { get; set; }
+    }
     
     public class MessagesContentCache
     {
@@ -28,23 +35,35 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             }
         }
 
-
-        public WritableContentCachePage TryGetWritablePage(string topicId, MessagePageId pageId)
+        public WritableContentPage TryGetWritablePage(string topicId, MessagePageId pageId)
         {
             var result = TryGetPage(topicId, pageId);
-            return result as WritableContentCachePage;
+            return result as WritableContentPage;
         }
         
-        public WritableContentCachePage CreateWritablePage(string topicId, MessagePageId pageId)
+        public CreateWritablePageResult CreateWritablePage(string topicId, MessagePageId pageId)
         {
             lock (_lockObject)
             {
                 if (!_cache.ContainsKey(topicId))
                     _cache.Add(topicId, new Dictionary<long, IMessageContentPage>());
 
-                var writablePage = new WritableContentCachePage(pageId);
+                var byTopic = _cache[topicId];
+
+                if (byTopic.TryGetValue(pageId.Value, out var result))
+                {
+                    return new CreateWritablePageResult
+                    {
+                        Exists = result
+                    };
+                }
+
+                var writablePage = new WritableContentPage(pageId);
                 _cache[topicId].Add(writablePage.PageId.Value, writablePage);
-                return writablePage;
+                return new CreateWritablePageResult
+                {
+                    Result = writablePage
+                };
             }
         }
 
@@ -64,6 +83,29 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
                 if (!byTopic.ContainsKey(page.PageId.Value))
                     byTopic.Add(page.PageId.Value, page);
             }
+        }
+        
+        public WritableContentPage ConvertIntoWritable(string topicId, IMessageContentPage page)
+        {
+            lock (_lockObject)
+            {
+                if (!_cache.ContainsKey(topicId))
+                    _cache.Add(topicId, new Dictionary<long, IMessageContentPage>());
+                
+                var byTopic = _cache[topicId];
+
+                if (!byTopic.ContainsKey(page.PageId.Value))
+                    byTopic.Remove(page.PageId.Value);
+
+
+                var writablePage = new WritableContentPage(page.PageId);
+                writablePage.Init(page.GetMessages());
+                
+                byTopic.Add(page.PageId.Value, writablePage);
+
+                return writablePage;
+            }
+            
         }
 
         
