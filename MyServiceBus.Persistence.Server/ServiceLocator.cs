@@ -137,8 +137,6 @@ namespace MyServiceBus.Persistence.Server
                 AppLogger.AddLog(LogProcess.System, timer, e.Message, e.StackTrace);
                 return new ValueTask();
             });
-            
-            
                         
             _taskTimerSyncMessages.Register("PersistentOperationsScheduler", SyncAndGcBlobOperations.Sync);
             

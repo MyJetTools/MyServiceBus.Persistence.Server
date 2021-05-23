@@ -14,11 +14,8 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
         private readonly Dictionary<string, Dictionary<long, IMessageContentPage>> _cache 
             = new ();
 
-        private IReadOnlyList<string> _topicsAsList = Array.Empty<string>();
-
 
         private readonly object _lockObject = new();
-
 
         public IMessageContentPage TryGetPage(string topicId, MessagePageId pageId)
         {
@@ -60,7 +57,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
                 if (!_cache.ContainsKey(topicId))
                 {
                     _cache.Add(topicId, new Dictionary<long, IMessageContentPage>());
-                    _topicsAsList = _cache.Keys.ToList();
                 }
                 
                 var byTopic = _cache[topicId];
@@ -118,38 +114,6 @@ namespace MyServiceBus.Persistence.Domains.MessagesContent
             }
         }
 
-        public IReadOnlyList<string> GetTopics()
-        {
-            return _topicsAsList;
-        }
-
-        public IReadOnlyList<WritableContentCachePage> GetWritablePagesHasMessagesToUpload(string topicId)
-        {
-            List<WritableContentCachePage> result = null;
-            lock (_lockObject)
-            {
-
-                if (_cache.TryGetValue(topicId, out var pagesByTopic))
-                {
-
-                    foreach (var messageContentPage in pagesByTopic.Values)
-                    {
-                        if (messageContentPage is not WritableContentCachePage writableContentCachePage) 
-                            continue;
-
-
-                        if (writableContentCachePage.NotSavedAmount > 0)
-                        {
-                            result ??= new List<WritableContentCachePage>();
-                            result.Add(writableContentCachePage);
-                        }
-                    }
-
-                }
-
-                return (IReadOnlyList<WritableContentCachePage>)result ?? Array.Empty<WritableContentCachePage>();
-            }
-        }
 
         public bool HasPage(string topicId, MessagePageId pageId)
         {

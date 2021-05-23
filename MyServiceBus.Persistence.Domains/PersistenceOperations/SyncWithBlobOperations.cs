@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using MyServiceBus.Persistence.Domains.BackgroundJobs;
 using MyServiceBus.Persistence.Domains.MessagesContent;
+using MyServiceBus.Persistence.Domains.MessagesContent.Page;
 
 namespace MyServiceBus.Persistence.Domains.PersistenceOperations
 {
@@ -30,25 +31,30 @@ namespace MyServiceBus.Persistence.Domains.PersistenceOperations
             if (!_appGlobalFlags.Initialized)
                 return;
 
-            var topics = _messagesContentCache.GetTopics();
+            var topics = _messagesContentCache.GetLoadedPages();
 
-            foreach (var topicId in topics)
+            foreach (var (topicId, pages) in topics)
             {
-                foreach (var page in _messagesContentCache.GetWritablePagesHasMessagesToUpload(topicId))
+                foreach (var page in pages)
                 {
-                    await _taskSchedulerByTopic.ExecuteTaskAsync(topicId, page.PageId, "Upload messages to blob", async ()=>
+                    if (page is WritableContentCachePage {NotSavedAmount: > 0} writableContentCachePage)
                     {
-                        var result = await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
-
-                        while (result != SyncResult.Done)
+                        await _taskSchedulerByTopic.ExecuteTaskAsync(topicId, page.PageId, "Upload messages to blob", async ()=>
                         {
-                            _appLogger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageId: " + page.PageId.Value,
-                                "There are messages to upload but no writer found. Creating one...");
-                            await _messagesContentPersistentStorage.CreateNewPageAsync(topicId, page.PageId, page);
-                            result = await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
-                        }
+                            var result = await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
+
+                            while (result != SyncResult.Done)
+                            {
+                                _appLogger.AddLog(LogProcess.PagesLoaderOrGc, topicId, "PageId: " + page.PageId.Value,
+                                    "There are messages to upload but no writer found. Creating one...");
+                                await _messagesContentPersistentStorage.CreateNewPageAsync(topicId, page.PageId, writableContentCachePage);
+                                result = await _messagesContentPersistentStorage.SyncAsync(topicId, page.PageId);
+                            }
  
-                    });
+                        });
+                    }
+                    
+             
                 }
             }
 
