@@ -171,9 +171,10 @@ namespace MyServiceBus.Persistence.AzureStorage.TopicMessages
                 var contentMessage = ProtoBuf.Serializer.Deserialize<MessageContentGrpcModel>(frame);
                 
                 if (_messagesInBlob.ContainsKey(contentMessage.MessageId))
-                    _messagesInBlob.Add(contentMessage.MessageId, contentMessage);
-                else
                     _messagesInBlob[contentMessage.MessageId] = contentMessage;
+                else
+                    _messagesInBlob.Add(contentMessage.MessageId, contentMessage);
+
                 
                 if (MaxMessageIdInBlob < contentMessage.MessageId)
                     MaxMessageIdInBlob = contentMessage.MessageId;
