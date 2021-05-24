@@ -108,6 +108,9 @@ namespace MyServiceBus.Persistence.Domains
                     Console.WriteLine(newItem.DateTime.ToString("s") + ": Topic: "+topicId+"; [" + context + "] " + message);
                 }
                 
+                if (newItem.StackTrace != null)
+                    Console.WriteLine("StackTrace: "+newItem.StackTrace);
+                
                 InsertItem(newItem);
             }
 
