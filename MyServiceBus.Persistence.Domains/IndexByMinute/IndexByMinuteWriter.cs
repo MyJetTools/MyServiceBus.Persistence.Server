@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,10 +9,12 @@ namespace MyServiceBus.Persistence.Domains.IndexByMinute
     public class IndexByMinuteWriter
     {
         private readonly IIndexByMinuteStorage _indexByMinuteStorage;
+        private readonly AppGlobalFlags _appGlobalFlags;
 
-        public IndexByMinuteWriter(IIndexByMinuteStorage indexByMinuteStorage)
+        public IndexByMinuteWriter(IIndexByMinuteStorage indexByMinuteStorage, AppGlobalFlags appGlobalFlags)
         {
             _indexByMinuteStorage = indexByMinuteStorage;
+            _appGlobalFlags = appGlobalFlags;
         }
         
         private readonly Dictionary<string, List<MessageContentGrpcModel>> _rawMessagesQueue
@@ -26,6 +29,9 @@ namespace MyServiceBus.Persistence.Domains.IndexByMinute
             IEnumerable<MessageContentGrpcModel> grpcModels)
         {
             var newIndexData = grpcModels.GroupByMinutes();
+
+            if (_appGlobalFlags.DebugTopic == topicId)
+                Console.WriteLine($"Trying to save index for {topicId} and year {year}. New Index Data Amount: {newIndexData.Count}");
 
             if (newIndexData != null)
                 foreach (var (minuteNo, messageId) in newIndexData)
