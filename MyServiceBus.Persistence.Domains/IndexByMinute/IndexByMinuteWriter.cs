@@ -30,16 +30,18 @@ namespace MyServiceBus.Persistence.Domains.IndexByMinute
         {
             var newIndexData = grpcModels.GroupByMinutes();
 
-            if (_appGlobalFlags.DebugTopic == topicId)
-                Console.WriteLine($"Trying to save index for {topicId} and year {year}. New Index Data Amount: {newIndexData.Count}");
-
             if (newIndexData != null)
                 foreach (var (minuteNo, messageId) in newIndexData)
                 {
                     var messageIdInStorage = await _indexByMinuteStorage.GetMessageIdAsync(topicId, year, minuteNo);
 
-                    if (messageId < messageIdInStorage || messageIdInStorage == 0)
-                        await _indexByMinuteStorage.SaveMinuteIndexAsync(topicId, year, minuteNo, messageId);
+                        if (messageId < messageIdInStorage || messageIdInStorage == 0)
+                        {
+                            if (_appGlobalFlags.DebugTopic == topicId)
+                                Console.WriteLine($"Saving to blob {topicId} and year {year}. MinuteNo{minuteNo}. MessageId: {messageId}");
+                            
+                            await _indexByMinuteStorage.SaveMinuteIndexAsync(topicId, year, minuteNo, messageId);    
+                        }
                 }
 
         }
