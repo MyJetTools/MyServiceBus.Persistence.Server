@@ -12,7 +12,7 @@ namespace MyServiceBus.Persistence.Server.Grpc
     public class MyServiceBusMessagesPersistenceGrpcService : IMyServiceBusMessagesPersistenceGrpcService
     {
 
-        public async IAsyncEnumerable<byte[]> GetPageCompressedAsync(GetMessagesPageGrpcRequest request)
+        public async IAsyncEnumerable<CompressedMessageChunkModel> GetPageCompressedAsync(GetMessagesPageGrpcRequest request)
         {
             if (!ServiceLocator.AppGlobalFlags.Initialized)
                 throw new Exception("App is not initialized yet");
@@ -22,12 +22,17 @@ namespace MyServiceBus.Persistence.Server.Grpc
 
             if (page != null)
             {
-                foreach (var batch in page.GetCompressedPage().ZippedContent.BatchIt(1024*1024*3))
-                    yield return batch.ToArray();
+                foreach (var batch in page.GetCompressedPage().ZippedContent.BatchIt(1024 * 1024 * 3))
+                    yield return new CompressedMessageChunkModel
+                    {
+                        Chunk = batch.ToArray()
+                    };
             }
         }
 
-        public async ValueTask SaveMessagesAsync(IAsyncEnumerable<byte[]> request)
+
+
+        public async ValueTask SaveMessagesAsync(IAsyncEnumerable<CompressedMessageChunkModel> request)
         {
             
             if (!ServiceLocator.AppGlobalFlags.Initialized)
